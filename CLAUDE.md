@@ -34,6 +34,7 @@ npm run db:studio    # Drizzle Studio (DB GUI)
 - **날짜 계산**: 네이티브 `Date` 산술 대신 `date-fns` / `date-fns-tz`를 우선 사용
 - **라이브러리 우선·환각 금지 (중요)**: 직접 짜기 전에 설치된 라이브러리 기능을 먼저 쓴다(로우코드 지양). API가 확실하지 않으면 추측하지 말고 **Context7 MCP**/공식 문서로 먼저 조회하며, **존재하지 않는 기능을 지어내지 않는다** (상세: `docs/guides/coding.md`)
 - **UI 구현**: 화면/디자인 작업은 **frontend-design 스킬**을 적극 사용하고, 컴포넌트는 손으로 짜기 전에 **shadcn(`npx shadcn@latest add`) + shadcn MCP**로 추가한다 (상세: `docs/guides/coding.md`)
+- **구현 중 행동 가이드**: 코드를 작성·수정·리팩터링할 때 **`karpathy-guidelines` 스킬**(안드레 카파시 가이드라인)을 켜고 최소·외과적 변경, 가정 드러내기, 검증 기준 우선 원칙을 따른다 (상세: `docs/guides/coding.md`)
 - **구현 후 정리**: 작성·수정 뒤 **code-simplifier 스킬(`/simplify`)**로 불필요·중복 코드를 정리한다. 쓸모없는 코드(미사용 import/변수·죽은 분기)는 남기지 않는다
 - **커밋 전 검증**: 구현 태스크는 `npm run lint` + `npm run build` → `npm run test` 순서로 통과해야 하며, **단위 테스트 작성은 필수**다. 화면 흐름이 바뀌면 **Playwright MCP**로 실제 브라우저에서 검증한다 (상세는 `docs/guides/verification.md`)
 

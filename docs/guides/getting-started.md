@@ -72,6 +72,9 @@ http://localhost:3000 에서 스타터킷 랜딩 페이지를 확인한다.
 - 마켓플레이스: `claude-plugins-official`(anthropics/claude-plugins-official)
 - 플러그인 추가/제거는 Claude Code에서 `/plugin` 명령으로 관리한다.
 
+> **설치 스코프 (중요)**: 위에 명시한 권장 플러그인은 반드시 **프로젝트 스코프(`.claude/settings.json`)**에 설치/등록한다. `/plugin`으로 추가할 때 저장 위치를 물으면 **사용자(전역)·local이 아니라 프로젝트(project)를 선택**해야, 설정이 git에 커밋되어 팀원·다른 머신에서도 동일하게 재현된다. (전역 설정에만 켜면 이 저장소를 클론한 다른 사람에게는 적용되지 않는다.)
+> 단, 아래 "보안 원칙"에 해당하는 **서드파티 플러그인은 예외**로, 프로젝트 스코프에 커밋하지 말고 `.claude/settings.local.json`(gitignore됨) 또는 사용자(전역) 스코프에 둔다.
+
 > **보안 원칙**: 공개 템플릿이므로 클론하는 사람의 머신에서 코드를 실행할 수 있는 플러그인은 **Anthropic 1st-party 마켓플레이스(`anthropics/*`)로만** 한정한다. 서드파티(개인 GitHub) 마켓플레이스/플러그인(예: harness, karpathy 등)은 공급망(supply-chain) 위험이 있어 프로젝트 설정에 커밋하지 않는다. 개인적으로 쓰려면 gitignore되는 `.claude/settings.local.json` 또는 사용자(전역) 설정에 둔다.
 
 > 플러그인 캐시(`~/.claude/plugins/`)는 각자 환경에 내려받아지며 git에 포함되지 않는다. 따라서 `enabledPlugins`만으로 환경이 재현된다.
