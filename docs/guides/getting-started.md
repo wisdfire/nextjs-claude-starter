@@ -68,14 +68,17 @@ http://localhost:3000 에서 스타터킷 랜딩 페이지를 확인한다.
 
 이 저장소는 `.claude/settings.json`에 **프로젝트 권장 플러그인 세트와 마켓플레이스**를 명시해 두었다. Claude Code로 이 프로젝트를 열면, 사용자(전역) 설정에 해당 플러그인이 없어도 프로젝트 설정 기준으로 활성화/설치가 안내된다.
 
-- 포함 플러그인(모두 **Anthropic 공식** `claude-plugins-official`): `vercel`, `supabase`, `playwright`, `frontend-design`, `typescript-lsp`, `code-review`, `code-simplifier`, `commit-commands`, `claude-md-management`, `security-guidance`
-- 마켓플레이스: `claude-plugins-official`(anthropics/claude-plugins-official)
+- 포함 플러그인(**Anthropic 공식** `claude-plugins-official`): `vercel`, `supabase`, `playwright`, `frontend-design`, `typescript-lsp`, `code-review`, `code-simplifier`, `commit-commands`, `claude-md-management`, `security-guidance`
+- 포함 플러그인(**서드파티 — 보안 예외 승인**): `ui-ux-pro-max`(UI/UX 디자인 인텔리전스, `ui-ux-pro-max-skill` 마켓플레이스)
+- 마켓플레이스: `claude-plugins-official`(anthropics/claude-plugins-official), `ui-ux-pro-max-skill`(nextlevelbuilder/ui-ux-pro-max-skill)
 - 플러그인 추가/제거는 Claude Code에서 `/plugin` 명령으로 관리한다.
 
 > **설치 스코프 (중요)**: 위에 명시한 권장 플러그인은 반드시 **프로젝트 스코프(`.claude/settings.json`)**에 설치/등록한다. `/plugin`으로 추가할 때 저장 위치를 물으면 **사용자(전역)·local이 아니라 프로젝트(project)를 선택**해야, 설정이 git에 커밋되어 팀원·다른 머신에서도 동일하게 재현된다. (전역 설정에만 켜면 이 저장소를 클론한 다른 사람에게는 적용되지 않는다.)
 > 단, 아래 "보안 원칙"에 해당하는 **서드파티 플러그인은 예외**로, 프로젝트 스코프에 커밋하지 말고 `.claude/settings.local.json`(gitignore됨) 또는 사용자(전역) 스코프에 둔다.
 
-> **보안 원칙**: 공개 템플릿이므로 클론하는 사람의 머신에서 코드를 실행할 수 있는 플러그인은 **Anthropic 1st-party 마켓플레이스(`anthropics/*`)로만** 한정한다. 서드파티(개인 GitHub) 마켓플레이스/플러그인(예: harness, karpathy 등)은 공급망(supply-chain) 위험이 있어 프로젝트 설정에 커밋하지 않는다. 개인적으로 쓰려면 gitignore되는 `.claude/settings.local.json` 또는 사용자(전역) 설정에 둔다.
+> **보안 원칙**: 공개 템플릿이므로 클론하는 사람의 머신에서 코드를 실행할 수 있는 플러그인은 원칙적으로 **Anthropic 1st-party 마켓플레이스(`anthropics/*`)로만** 한정한다. 서드파티(개인 GitHub) 마켓플레이스/플러그인(예: harness, karpathy 등)은 공급망(supply-chain) 위험이 있어 기본적으로 프로젝트 설정에 커밋하지 않는다. 개인적으로 쓰려면 gitignore되는 `.claude/settings.local.json` 또는 사용자(전역) 설정에 둔다.
+>
+> **승인된 예외**: `ui-ux-pro-max`(`nextlevelbuilder/ui-ux-pro-max-skill`)는 디자인 작업의 핵심 도구로 판단해 프로젝트 메인테이너가 검토 후 **프로젝트 스코프 커밋을 명시적으로 승인**했다. 따라서 이 플러그인과 마켓플레이스는 예외적으로 `.claude/settings.json`에 포함되어 git으로 재현된다. 다른 서드파티 플러그인을 같은 방식으로 추가하려면 동일하게 공급망 위험을 검토하고 이 목록에 명시한 뒤 커밋한다. (서드파티 마켓플레이스는 업스트림이 변경될 수 있으므로 업데이트 시 내용을 확인한다.)
 
 > 플러그인 캐시(`~/.claude/plugins/`)는 각자 환경에 내려받아지며 git에 포함되지 않는다. 따라서 `enabledPlugins`만으로 환경이 재현된다.
 

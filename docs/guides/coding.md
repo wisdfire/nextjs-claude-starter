@@ -21,10 +21,13 @@
 - Next.js 16은 훈련 데이터와 다른 breaking change가 있으므로 `node_modules/next/dist/docs/`의 해당 가이드를 먼저 확인한다.
 - 확인이 끝나기 전에는 코드를 확정하지 않는다. "아마 이럴 것이다"로 진행하지 않는다.
 
-## 3. UI 구성 — frontend-design 스킬 적극 사용
+## 3. UI 구성 — 디자인 스킬 적극 사용 (ui-ux-pro-max + frontend-design)
 
-- 새 화면·레이아웃·시각 디자인을 만들거나 기존 UI를 다듬을 때는 **`frontend-design` 스킬을 적극 사용**해 의도적인(템플릿 같지 않은) 디자인 방향·타이포그래피·구성을 잡는다.
-- 색상·간격·라운드 등은 `app/globals.css`의 디자인 토큰(CSS 변수)을 **수정하지 말고** Tailwind 유틸리티 클래스로만 적용한다. (상세: `docs/guides/architecture.md`)
+- 새 화면·레이아웃·시각 디자인을 만들거나 기존 UI를 다듬을 때는 **디자인 스킬을 적극 사용**해 의도적인(템플릿 같지 않은) 디자인 방향·타이포그래피·구성을 잡는다.
+- **`ui-ux-pro-max` 스킬을 우선 사용**한다. 50+ 스타일, 161개 컬러 팔레트, 57개 폰트 페어링, 99개 UX 가이드라인, 차트 패턴 등 UI/UX 설계 인텔리전스를 제공한다. UI를 계획·구현·리뷰·개선할 때(`plan`/`build`/`design`/`review`/`improve`) 켠다. shadcn MCP와 연동되어 컴포넌트 탐색·예시도 함께 가져온다.
+  - 종류별 보조 스킬: 디자인 토큰·컴포넌트 스펙은 `ui-ux-pro-max:design-system`, 스타일링은 `ui-ux-pro-max:ui-styling`, 발표 자료는 `ui-ux-pro-max:slides`, 배너/소셜 이미지는 `ui-ux-pro-max:banner-design`·`ui-ux-pro-max:design`, 브랜드 가이드는 `ui-ux-pro-max:brand`를 사용한다.
+- 시각 방향(아트 디렉션)·타이포그래피 디테일을 더 다듬어야 하면 **`frontend-design` 스킬을 함께 사용**한다.
+- 색상·간격·라운드 등은 `app/globals.css`의 디자인 토큰(CSS 변수)을 **수정하지 말고** Tailwind 유틸리티 클래스로만 적용한다. ui-ux-pro-max가 제안하는 팔레트/스케일도 이 제약 안에서 Tailwind 유틸리티로 옮긴다. (상세: `docs/guides/architecture.md`)
 
 ## 4. 컴포넌트 생성 — shadcn/ui + MCP 적극 사용
 
@@ -59,7 +62,7 @@
 - [ ] 구현을 시작할 때 karpathy-guidelines 스킬을 켜고 최소·외과적 변경 원칙을 적용했는가?
 - [ ] 같은 기능을 하는 설치된 라이브러리/유틸을 먼저 찾아봤는가? (로우코드 지양)
 - [ ] 사용한 라이브러리 API를 Context7/공식 문서로 확인했는가? (지어내지 않음)
-- [ ] UI 작업이라면 frontend-design 방향을 적용하고, 컴포넌트는 shadcn/MCP로 추가했는가?
+- [ ] UI 작업이라면 ui-ux-pro-max(+필요 시 frontend-design) 방향을 적용하고, 컴포넌트는 shadcn/MCP로 추가했는가?
 - [ ] code-simplifier로 불필요한 코드를 정리했는가?
 - [ ] 단위 테스트를 추가/갱신했는가? (`docs/guides/verification.md`)
 - [ ] 화면 흐름이 바뀌었다면 Playwright MCP로 실제 브라우저에서 확인했는가?
