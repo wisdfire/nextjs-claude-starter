@@ -55,6 +55,29 @@
 
 - **next-intl** 패키지가 설치되어 있으나 기본 라우팅에는 연결되어 있지 않다. 다국어가 필요하면 `i18n/routing.ts`를 만들고 `proxy.ts`에 next-intl 미들웨어를 합성한다 (자세한 내용은 next-intl 공식 문서 / Context7 참고).
 
+## 데이터 수집·크롤링 (Python) — 스크래핑 파이프라인
+
+> 이 스택은 위의 Next.js 웹앱과 **분리된 별도 Python 서비스**다. npm 의존성이 아니며, `scraping-pipeline-build` 하네스(오케스트레이터 스킬 `scraping-pipeline-build-orchestrator`)로 구현·확장한다. 아래는 크롤링 파이프라인을 구현할 때 사용하는 표준 스택이다. 실제 구현·확장은 하네스를 통해 진행한다.
+
+파이프라인 단계: **Trigger → Scraping → Cleaning → Extracting → Load**
+
+- **언어·런타임**: Python 3.12+
+- **패키지 매니저: uv** — `pyproject.toml`(의존성 선언) + `uv.lock`(잠금), `uv sync`(설치)·`uv run`(실행). pip 대비 빠른 설치와 락 기반 재현성을 확보해 Docker 빌드 캐시·CI 속도에 유리하므로 pip/requirements.txt 대신 uv로 통일한다
+- **동적 렌더링 스크래핑: Playwright (Python)** — JS 렌더링 완료 대기(`networkidle`/셀렉터), Anti-Bot 우회(Stealth 속성·랜덤 딜레이·필요 시 Proxy 로테이션). **메모리 누수 방지**를 위해 브라우저·컨텍스트 객체는 `try/finally`로 반드시 `close()`한다. 네트워크 타임아웃·재시도(Retry) 로직으로 실행 예산(예: 컨테이너/Lambda 제한시간) 내 완료를 보장한다
+- **HTML 정제: BeautifulSoup4** — `<script>`·`<style>`·`SVG` 등 렌더링 무관 태그를 제거해 순수 텍스트만 남긴다. LLM 입력 토큰 비용을 최소화하기 위함이다
+- **구조화 추출: LLM API + Instructor + Pydantic** — 정제 텍스트를 LLM에 넘기되, Instructor + Pydantic 모델로 사전 정의한 JSON 스키마 형태로만 반환하도록 강제한다
+- **적재: Supabase (PostgreSQL)** — 고유 식별 키 기준 **Upsert(`on_conflict`)** 로 크론 반복 실행 시의 데이터 중복을 원천 차단하고 무결성을 보장한다 (위 '데이터·백엔드'의 Supabase와 동일 Postgres를 공유 가능)
+- **테스트: pytest** — 고정 HTML **fixture** 기반 파서 단위테스트 + Pydantic 스키마 검증으로 타겟 사이트 DOM 변경에 의한 조용한 회귀(silent failure)를 배포 전에 잡는다. 실제 사이트 접속 테스트는 `@pytest.mark.integration`으로 분리하고, CI 게이트에서는 단위테스트(`uv run pytest -m "not integration"`) 통과를 배포 전제로 강제한다
+- **설계 패턴: Factory** — 공통 `BaseScraper`·공통 추출 파이프라인은 그대로 두고, 새 타겟 사이트는 사이트별 파서·Pydantic 스키마·테스트만 추가한다
+- **인프라·배포**:
+  - **Docker** — Playwright 브라우저 포함 이미지. uv 멀티스테이지 빌드(`uv sync --frozen --no-dev`)로 락파일을 먼저 COPY해 레이어 캐시를 살린다
+  - **GitHub Actions** — pytest 게이트 → 이미지 빌드 → 레지스트리 push → **EC2/K8s 자동 배포**. pytest 실패 시 배포가 차단되도록 job을 `needs:`로 체이닝한다
+  - **AWS EC2 · 쿠버네티스** — 컨테이너 실행. K8s `Deployment`(상시)·`CronJob`(스케줄 수집)
+  - **Redis** — 작업 큐·중복 방지 캐시·분산 락
+  - **Terraform (IaC)** — EC2/보안그룹/K8s 클러스터/Redis 등 **인프라 프로비저닝**만 담당(remote state + lock). **앱 배포(이미지 빌드·롤아웃)는 GitHub Actions**가 담당하며 두 레이어를 섞지 않는다. 단일 EC2 호스트 규모면 K8s 없이 docker-compose로 단순화할 수 있다
+
+> 각 단계의 상세 구현 규약은 하네스 스킬에 있다: `playwright-scraping`(스크래핑), `html-clean-llm-extract`(정제·추출), `supabase-upsert-load`(적재), `python-test-ci`(테스트·CI 게이트), `docker-cicd-deploy`(컨테이너·배포), `terraform-infra`(IaC).
+
 ---
 
 ## 테스트

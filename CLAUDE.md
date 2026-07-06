@@ -63,3 +63,25 @@ npm run db:studio    # Drizzle Studio (DB GUI)
 2. 요구사항 문서를 `docs/`에 추가
 3. `app/page.tsx`(랜딩)를 실제 화면으로 교체하며 개발 시작
 4. 위 "문서 색인"에 따라 작업별 가이드를 먼저 읽고 진행
+
+## 하네스 (에이전트 팀 오케스트레이터)
+
+이 프로젝트에는 4개의 범용 하네스가 구성되어 있다. 해당 도메인 작업 요청 시 아래 오케스트레이터 스킬을 사용하라. 단순 질문은 직접 응답 가능하다. 에이전트/스킬 상세는 `.claude/agents/`·`.claude/skills/`에서 관리한다(여기 중복 기재하지 않음).
+
+| 하네스 | 목표 | 트리거 → 사용할 오케스트레이터 스킬 |
+| ------ | ---- | ----------------------------------- |
+| 풀스택 웹 개발 | 와이어프레임→디자인→프론트→백엔드→QA(링크 경로 검증)를 파이프라인으로 조율 | 웹사이트/화면/풀스택 개발 요청 시 → `fullstack-web-orchestrator` |
+| 데이터 파이프라인 설계 | 스키마·ETL·검증규칙·모니터링을 계층적 위임으로 설계(문서 산출) | 데이터 파이프라인/스키마/ETL/모니터링 설계 요청 시 → `data-pipeline-design-orchestrator` |
+| 리서치→PRD/ROADMAP | 웹·학술·커뮤니티 교차검증 → PRD.md(애드센스 80%+·유지보수 최소·Lighthouse 지표)·ROADMAP.md 생성 | PRD/요구사항 정의/로드맵/시장조사 요청 시 → `research-to-spec-orchestrator` |
+| 스크래핑 파이프라인 구현 | Trigger→Scraping→Cleaning→Extracting→Load 구현 + GitHub Actions Docker 자동배포(Factory 확장) | 스크래퍼/크롤러/수집 파이프라인/새 사이트 추가 요청 시 → `scraping-pipeline-build-orchestrator` |
+
+> **데이터 수집·크롤링(Python) 스택**은 Next.js 앱과 분리된 별도 서비스다: uv · Playwright(Python) · BeautifulSoup4 · LLM+Instructor/Pydantic · Supabase Upsert · pytest(CI 게이트) · Docker/GitHub Actions/EC2·K8s/Redis/Terraform. 상세는 `docs/guides/tech-stack.md`의 "데이터 수집·크롤링(Python)" 섹션 참고.
+
+**변경 이력:**
+
+| 날짜 | 변경 내용 | 대상 | 사유 |
+| ---- | -------- | ---- | ---- |
+| 2026-07-06 | 4개 범용 하네스 초기 구성 (에이전트 20 · 스킬 21) | 전체 | 스타터킷 자동화 체계 구축 |
+| 2026-07-06 | 스크래핑 하네스에 uv 통일·pytest CI 게이트·Terraform IaC 반영 (스킬 `python-test-ci`·`terraform-infra` 신규) | scraping-pipeline-build 하네스 | 파이썬 크롤링 완성도(재현성·회귀 방지·인프라 관리) 보강 |
+| 2026-07-06 | 파이썬 크롤링 기술스택 문서화 | `docs/guides/tech-stack.md`, CLAUDE.md | 크롤링 스택을 문서에 반영 요청 |
+| 2026-07-07 | 테스트 규율·IaC 공통 규약을 나머지 3개 하네스에 확장 (스킬 `web-deploy-config` 신규, `terraform-infra` 재사용) | fullstack-web·data-pipeline-design·research-to-spec | 하네스별 성격에 맞춰 테스트/IaC 품질 바 전파 (코드=Vitest+vercel.ts, 문서=요구사항 명시) |
