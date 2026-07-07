@@ -73,9 +73,9 @@ npm run db:studio    # Drizzle Studio (DB GUI)
 | 풀스택 웹 개발 | 와이어프레임→디자인→프론트→백엔드→QA(링크 경로 검증)를 파이프라인으로 조율 | 웹사이트/화면/풀스택 개발 요청 시 → `fullstack-web-orchestrator` |
 | 데이터 파이프라인 설계 | 스키마·ETL·검증규칙·모니터링을 계층적 위임으로 설계(문서 산출) | 데이터 파이프라인/스키마/ETL/모니터링 설계 요청 시 → `data-pipeline-design-orchestrator` |
 | 리서치→PRD/ROADMAP | 웹·학술·커뮤니티 교차검증 → PRD.md(애드센스 80%+·유지보수 최소·Lighthouse 지표)·ROADMAP.md 생성 | PRD/요구사항 정의/로드맵/시장조사 요청 시 → `research-to-spec-orchestrator` |
-| 스크래핑 파이프라인 구현 | Trigger→Scraping→Cleaning→Extracting→Load 구현 + GitHub Actions Docker 자동배포(Factory 확장) | 스크래퍼/크롤러/수집 파이프라인/새 사이트 추가 요청 시 → `scraping-pipeline-build-orchestrator` |
+| 크롤링 워커 구현 | 별도 인프라(K3s+KEDA+Valkey+Browserless+OTel) 위 Celery 크롤링 워커(MAS) 구현 + GHCR·GitOps 배포 (Factory 확장, 구현담당 crawl-worker-engineer) | 스크래퍼/크롤러/수집 파이프라인/크롤링 워커/새 사이트·에이전트 추가/Celery/KEDA 요청 시 → `scraping-pipeline-build-orchestrator` |
 
-> **데이터 수집·크롤링(Python) 스택**은 Next.js 앱과 분리된 별도 서비스다: uv · Playwright(Python) · BeautifulSoup4 · LLM+Instructor/Pydantic · Supabase Upsert · pytest(CI 게이트) · Docker/GitHub Actions/EC2·K8s/Redis/Terraform. 상세는 `docs/guides/tech-stack.md`의 "데이터 수집·크롤링(Python)" 섹션 참고.
+> **데이터 수집·크롤링(Python) 스택**은 Next.js 앱과 분리된 별도 서비스다: uv · Python 3.14 · Celery 5.6+Valkey+Beat · Playwright 1.61 sync+Browserless CDP · 하이브리드 파싱(Locator 80% + ScrapeGraphAI 폴백 20%) · Pydantic v2 · OTel · GHCR+GitOps 배포 · pytest(CI 게이트). IaC 표준 도구는 **OpenTofu 1.12.x**(`opentofu-infra` 스킬, Terraform 대체). 상세는 `docs/guides/tech-stack.md`의 "데이터 수집·크롤링(Python)" 섹션 참고.
 
 **변경 이력:**
 
@@ -85,3 +85,6 @@ npm run db:studio    # Drizzle Studio (DB GUI)
 | 2026-07-06 | 스크래핑 하네스에 uv 통일·pytest CI 게이트·Terraform IaC 반영 (스킬 `python-test-ci`·`terraform-infra` 신규) | scraping-pipeline-build 하네스 | 파이썬 크롤링 완성도(재현성·회귀 방지·인프라 관리) 보강 |
 | 2026-07-06 | 파이썬 크롤링 기술스택 문서화 | `docs/guides/tech-stack.md`, CLAUDE.md | 크롤링 스택을 문서에 반영 요청 |
 | 2026-07-07 | 테스트 규율·IaC 공통 규약을 나머지 3개 하네스에 확장 (스킬 `web-deploy-config` 신규, `terraform-infra` 재사용) | fullstack-web·data-pipeline-design·research-to-spec | 하네스별 성격에 맞춰 테스트/IaC 품질 바 전파 (코드=Vitest+vercel.ts, 문서=요구사항 명시) |
+| 2026-07-07 | 크롤링 워커(MAS) 트랙 추가: 구현담당 에이전트 `crawl-worker-engineer` + 계약 스킬 `celery-crawl-worker` 신규, 오케스트레이터에 트랙 분기 반영 | scraping-pipeline-build 하네스, `docs/guides/tech-stack.md` | 별도 인프라(K3s+KEDA+Valkey+Browserless+OTel) 위 Celery 워커 구현 프롬프트를 구현담당 워커에 적용 요청 |
+| 2026-07-08 | 배치 트랙 폐기·워커(MAS) 트랙 단일화: 에이전트 4종(infra·scraper·extraction·loader-engineer)·스킬 2종(docker-cicd-deploy·html-clean-llm-extract) 삭제, 오케스트레이터를 단일 구현담당(서브 에이전트) 구조로 재작성 | scraping-pipeline-build 하네스, `docs/guides/tech-stack.md` | 워커 트랙만 사용하기로 결정 |
+| 2026-07-08 | IaC 표준 도구를 Terraform→OpenTofu 1.12.x로 전환 (스킬 `terraform-infra`→`opentofu-infra` 대체, 4개 하네스 참조 일괄 갱신) | 전체 하네스, `docs/guides/tech-stack.md` | IaC를 OpenTofu(topu)로 사용 요청 |

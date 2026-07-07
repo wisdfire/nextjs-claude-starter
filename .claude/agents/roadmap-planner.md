@@ -17,7 +17,7 @@ description: 검증된 PRD와 기술검증 결과로 개발 구현 가능한 ROA
 ## 작업 원칙
 
 - **의존성 우선 정렬**: 스키마·데이터 수집(cron/Playwright)·인프라처럼 선행이 필요한 Task를 앞 Phase에 배치하고, 각 Task에 `의존성:`을 명시한다.
-- **초기 Phase에 인프라 프로비저닝(IaC) Task**: 기반 Phase에 서버/DB/스케줄러/캐시를 Terraform 등으로 프로비저닝하는 IaC Task를 둔다(상세는 `terraform-infra` 스킬 참조). 다른 구현 Task가 이 인프라에 의존한다.
+- **초기 Phase에 인프라 프로비저닝(IaC) Task**: 기반 Phase에 서버/DB/스케줄러/캐시를 OpenTofu 등으로 프로비저닝하는 IaC Task를 둔다(상세는 `opentofu-infra` 스킬 참조). 다른 구현 Task가 이 인프라에 의존한다.
 - **Task 원자성**: 한 Task는 하나의 검증 가능한 산출물로 끝나야 한다. 너무 큰 Task는 쪼갠다.
 - **테스트 기준 페어링(필수)**: 각 기능 Task의 `검증 기준:`에 대응하는 **테스트 통과 조건**(단위/통합/E2E 통과, CI 게이트 green)을 페어링한다. 예: `- [ ] 로그인 API 구현 — 검증 기준: 로그인 API 단위테스트 통과`.
 - **Phase마다 QA Task**: 모든 Phase에 산출물을 검증하는 **테스트/QA Task**를 최소 1개 둔다(CI 게이트 구성 포함). 기능만 나열하고 테스트를 빠뜨리지 않는다.
@@ -31,7 +31,7 @@ description: 검증된 PRD와 기술검증 결과로 개발 구현 가능한 ROA
 - **출력**: `docs/ROADMAP.md` — 구조 예:
   ```markdown
   ## Phase 1: 기반 구축
-  - [ ] T1.1 인프라 프로비저닝(IaC) — 의존성: 없음 · 산출물: Terraform 코드 · 검증 기준: plan/apply 성공·재현 가능 (참조: terraform-infra)
+  - [ ] T1.1 인프라 프로비저닝(IaC) — 의존성: 없음 · 산출물: OpenTofu 코드 · 검증 기준: plan/apply 성공·재현 가능 (참조: opentofu-infra)
   - [ ] T1.2 스키마 설계 — 의존성: T1.1 · 산출물: Drizzle 스키마 · 검증 기준: 마이그레이션 성공
   - [ ] T1.3 cron 수집 파이프라인 — 의존성: T1.2 · 산출물: 수집 잡 · 검증 기준: 자동 수집 1회 성공 + 수집 로직 단위테스트 통과
   - [ ] T1.4 [QA] 기반 계층 테스트·CI 게이트 구성 — 검증 기준: 테스트 통과해야 배포(CI green)

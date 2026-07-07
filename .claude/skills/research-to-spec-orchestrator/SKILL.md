@@ -1,6 +1,6 @@
 ---
 name: research-to-spec-orchestrator
-description: 리서치→PRD/ROADMAP 문서화를 자동 오케스트레이션한다. "PRD 작성", "요구사항 정의", "로드맵", "리서치", "시장 조사", "기술 검증", "테스트 전략", "QA", "IaC", "인프라", "terraform", "재실행", "수정", "보완", "다시", "PRD 업데이트" 등의 요청 시 적극적으로 이 하네스를 가동하라. 웹/학술/커뮤니티 병렬 리서치 → 교차검증+PRD 작성 팀 → 기술검증 → 로드맵 생성을 하이브리드 모드로 지휘한다.
+description: 리서치→PRD/ROADMAP 문서화를 자동 오케스트레이션한다. "PRD 작성", "요구사항 정의", "로드맵", "리서치", "시장 조사", "기술 검증", "테스트 전략", "QA", "IaC", "인프라", "terraform", "opentofu", "tofu", "재실행", "수정", "보완", "다시", "PRD 업데이트" 등의 요청 시 적극적으로 이 하네스를 가동하라. 웹/학술/커뮤니티 병렬 리서치 → 교차검증+PRD 작성 팀 → 기술검증 → 로드맵 생성을 하이브리드 모드로 지휘한다.
 ---
 
 # research-to-spec 오케스트레이터
@@ -57,7 +57,7 @@ Phase마다 실행 모드가 다르다. 이 표를 반드시 따른다.
 - `TeamCreate`로 cross-validator + prd-author 팀을 만든다(`model: "opus"`).
 - 순서: cross-validator가 `02_*` 3개를 교차검증해 `03_validated_findings.md` 생성 → `SendMessage`로 prd-author에 전달 → prd-author가 `docs/PRD.md` 작성.
 - 상충·불명확 지점은 `SendMessage`로 두 에이전트가 조율한다.
-- **필수**: PRD에 **애드센스 80%+ · 유지보수 최소(cron+Playwright+IaC) · Lighthouse 지표 · 품질·테스트 전략(단위/통합/E2E·CI 게이트)**가 반드시 반영됐는지 확인한다(`prd-authoring`·`adsense-readiness` 스킬 기준). 유지보수 최소화 항목에는 **IaC 프로비저닝 원칙**(상세는 `terraform-infra` 스킬)이, 완성도 항목에는 **테스트 통과율**이 짝으로 들어가야 한다. 누락 시 prd-author에 보강 지시.
+- **필수**: PRD에 **애드센스 80%+ · 유지보수 최소(cron+Playwright+IaC) · Lighthouse 지표 · 품질·테스트 전략(단위/통합/E2E·CI 게이트)**가 반드시 반영됐는지 확인한다(`prd-authoring`·`adsense-readiness` 스킬 기준). 유지보수 최소화 항목에는 **IaC 프로비저닝 원칙**(상세는 `opentofu-infra` 스킬)이, 완성도 항목에는 **테스트 통과율**이 짝으로 들어가야 한다. 누락 시 prd-author에 보강 지시.
 - 완료 후 `TeamDelete`로 팀을 정리한다.
 
 ### Phase 4 — 기술 검증 (서브 에이전트)

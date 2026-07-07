@@ -122,7 +122,7 @@ jobs:
 ```
 
 - `uv run pytest -m "not integration"` 실패 시 `build-push`가 실행되지 않아 **배포가 차단**된다.
-- 배포 파이프라인 전체 구성은 `docker-cicd-deploy` 스킬과 정합한다(같은 `needs:` 체인).
+- 배포 파이프라인 전체 구성은 워커 트랙 계약(`celery-crawl-worker` 스킬: 이미지 빌드→GHCR push→GitOps PR)과 정합한다(같은 `needs:` 체인 — pytest 통과가 빌드·push의 전제).
 
 ## 5. fixture 갱신 규약 — 테스트를 무력화하지 말 것
 

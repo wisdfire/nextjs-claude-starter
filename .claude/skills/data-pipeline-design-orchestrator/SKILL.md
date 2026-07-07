@@ -1,6 +1,6 @@
 ---
 name: data-pipeline-design-orchestrator
-description: 데이터 파이프라인을 설계할 때 반드시 사용하라. pipeline-lead가 아키텍처를 확정하고 스키마/ETL/검증/모니터링 4개 전문 에이전트에 계층적으로 위임하는 에이전트 팀을 구동한다. "데이터 파이프라인 설계", "스키마 설계", "ETL 설계", "검증 규칙", "모니터링", "관측성", "SLA", "테스트 전략", "검증 테스트", "IaC", "인프라", "terraform", "재실행", "수정", "보완", "다시" 키워드에 적극적으로 켜라. 설계 산출물(문서)을 생성하며 구현은 하지 않는다.
+description: 데이터 파이프라인을 설계할 때 반드시 사용하라. pipeline-lead가 아키텍처를 확정하고 스키마/ETL/검증/모니터링 4개 전문 에이전트에 계층적으로 위임하는 에이전트 팀을 구동한다. "데이터 파이프라인 설계", "스키마 설계", "ETL 설계", "검증 규칙", "모니터링", "관측성", "SLA", "테스트 전략", "검증 테스트", "IaC", "인프라", "terraform", "opentofu", "tofu", "재실행", "수정", "보완", "다시" 키워드에 적극적으로 켜라. 설계 산출물(문서)을 생성하며 구현은 하지 않는다.
 ---
 
 # data-pipeline-design 오케스트레이터 (에이전트 팀 · 계층적 위임)
@@ -18,7 +18,7 @@ description: 데이터 파이프라인을 설계할 때 반드시 사용하라. 
 
 | 에이전트 | 타입 | 모델 | 역할 | 산출물 | 사용 스킬 | depends_on |
 | --- | --- | --- | --- | --- | --- | --- |
-| pipeline-lead | general-purpose | opus | 상위 조율자. 아키텍처 확정, 4개 하위에 위임, 정합성 관장, **배포·인프라(IaC) 방침** | `_workspace/00_pipeline_architecture.md` | `terraform-infra`(IaC 방침 참조) | — |
+| pipeline-lead | general-purpose | opus | 상위 조율자. 아키텍처 확정, 4개 하위에 위임, 정합성 관장, **배포·인프라(IaC) 방침** | `_workspace/00_pipeline_architecture.md` | `opentofu-infra`(IaC 방침 참조) | — |
 | schema-designer | general-purpose | opus | 소스 분석, 테이블/타입/관계/인덱스/제약, 정규화 판단, DDL·Drizzle 초안 | `_workspace/01_schema_design.md` | `schema-design` | pipeline-lead |
 | etl-designer | general-purpose | opus | E/T/L 로직, 멱등성, 증분, Upsert 키, 재처리·백필, **테스트·검증 전략** | `_workspace/02_etl_logic.md` | `etl-logic-design` | schema-designer |
 | validation-designer | general-purpose | opus | 4계층 검증 규칙, 품질 지표, quarantine, **규칙↔테스트 페어링** | `_workspace/03_validation_rules.md` | `data-validation-rules` | schema-designer |
@@ -40,7 +40,7 @@ description: 데이터 파이프라인을 설계할 때 반드시 사용하라. 
 - pipeline-lead를 상위 조율자로 지정한다.
 
 ### Phase 3 — 계층적 위임 실행
-1. **아키텍처 확정**: pipeline-lead가 전체 데이터 흐름·계층·**표준 용어 사전(테이블·컬럼·PK·Upsert 키)**과 **배포·인프라(IaC) 방침**(실행 환경 = 스케줄러/워커/DB/캐시를 Terraform으로 프로비저닝, 상세는 `terraform-infra` 스킬 참조)을 담은 `00_pipeline_architecture.md`를 작성한다.
+1. **아키텍처 확정**: pipeline-lead가 전체 데이터 흐름·계층·**표준 용어 사전(테이블·컬럼·PK·Upsert 키)**과 **배포·인프라(IaC) 방침**(실행 환경 = 스케줄러/워커/DB/캐시를 OpenTofu로 프로비저닝, 상세는 `opentofu-infra` 스킬 참조)을 담은 `00_pipeline_architecture.md`를 작성한다.
 2. **schema 우선 위임**: lead가 schema-designer에 위임 → `01_schema_design.md` 확정. 필드명·PK가 여기서 못박힌다.
 3. **하류 3개 위임(schema 참조)**: 확정된 필드명·PK를 lead가 브로드캐스트한 뒤 etl / validation / monitoring designer가 진행. 이들은 schema 산출물의 이름을 문자 그대로 참조한다. etl-designer는 **테스트·검증 전략**(Transform 단위테스트·멱등성 테스트·경계 케이스·테스트 도구)을, validation-designer는 **각 규칙↔테스트 케이스 페어링**(위반 샘플→reject/quarantine/flag 분기 검증)을 산출물에 포함한다.
 4. **팀원 간 조율**: 하위 designer가 스키마에 없는 컬럼/키가 필요하면 SendMessage로 schema-designer(또는 lead)에 보강을 요청하고, 변경은 lead 승인 후 전체에 재전파한다(단일 진실 원천).
