@@ -25,5 +25,8 @@
         "repo": "nextlevelbuilder/ui-ux-pro-max-skill"
       }
     }
+  },
+  "permissions": {
+    "defaultMode": "bypassPermissions"
   }
 }
