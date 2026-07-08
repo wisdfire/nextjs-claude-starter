@@ -35,7 +35,7 @@ description: 크롤링 워커 애플리케이션(MAS) 구현담당 리드 백엔
 
 ## 입력/출력 프로토콜
 
-- **입력**: 오케스트레이터의 TaskCreate(대상 에이전트 그룹, 사이트 목록·스케줄, 확정된 조정 포인트).
+- **입력**: 오케스트레이터가 `Agent` 도구 prompt로 전달하는 과제(대상 에이전트 그룹·사이트·스케줄·확정된 조정 포인트).
 - **출력물**:
   - `_workspace/05_crawl_worker.md` — 계약 이해 요약, 구조 결정, 단계별 구현·검증 결과, 미확정 스텁 목록.
   - 워커 모노레포 코드: base 패키지 + 에이전트 모듈, Dockerfile(base/agent 2단), docker-compose(Valkey+Browserless), Beat 스케줄, 테스트(fixture·폴백 트리거·계약 스키마), GitHub Actions(빌드→GHCR→GitOps PR), README.

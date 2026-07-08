@@ -68,6 +68,8 @@ npm run db:studio    # Drizzle Studio (DB GUI)
 
 이 프로젝트에는 4개의 범용 하네스가 구성되어 있다. 해당 도메인 작업 요청 시 아래 오케스트레이터 스킬을 사용하라. 단순 질문은 직접 응답 가능하다. 에이전트/스킬 상세는 `.claude/agents/`·`.claude/skills/`에서 관리한다(여기 중복 기재하지 않음).
 
+> **⚠️ 전제조건 — 실험적 플래그(팀 기반 하네스 3종)**: 풀스택 웹 개발·데이터 파이프라인 설계·리서치→PRD 하네스는 **에이전트 팀 조율 원시도구**(`TeamCreate`·`SendMessage`·`TaskCreate`)를 쓰며, 이는 실험적 기능으로 **`export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`이 설정된 셸에서 `claude`를 실행**해야만 제공된다. 미설정 시 팀이 **조용히 단일 에이전트로 폴백**되어(오류 없이 조율·병렬·`depends_on`이 소실) 하네스 가치가 사라진다. 각 오케스트레이터는 Phase 0에서 가용성을 확인하고 미설정 시 `Agent`(GA) 서브에이전트 폴백 모드로 분기한다. **크롤링 워커 구현 하네스는 `Agent`(GA) 단일 서브에이전트라 이 플래그가 불필요**하다.
+
 | 하네스 | 목표 | 트리거 → 사용할 오케스트레이터 스킬 |
 | ------ | ---- | ----------------------------------- |
 | 풀스택 웹 개발 | 와이어프레임→디자인→프론트→백엔드→QA(링크 경로 검증)를 파이프라인으로 조율 | 웹사이트/화면/풀스택 개발 요청 시 → `fullstack-web-orchestrator` |
@@ -88,3 +90,4 @@ npm run db:studio    # Drizzle Studio (DB GUI)
 | 2026-07-07 | 크롤링 워커(MAS) 트랙 추가: 구현담당 에이전트 `crawl-worker-engineer` + 계약 스킬 `celery-crawl-worker` 신규, 오케스트레이터에 트랙 분기 반영 | scraping-pipeline-build 하네스, `docs/guides/tech-stack.md` | 별도 인프라(K3s+KEDA+Valkey+Browserless+OTel) 위 Celery 워커 구현 프롬프트를 구현담당 워커에 적용 요청 |
 | 2026-07-08 | 배치 트랙 폐기·워커(MAS) 트랙 단일화: 에이전트 4종(infra·scraper·extraction·loader-engineer)·스킬 2종(docker-cicd-deploy·html-clean-llm-extract) 삭제, 오케스트레이터를 단일 구현담당(서브 에이전트) 구조로 재작성 | scraping-pipeline-build 하네스, `docs/guides/tech-stack.md` | 워커 트랙만 사용하기로 결정 |
 | 2026-07-08 | IaC 표준 도구를 Terraform→OpenTofu 1.12.x로 전환 (스킬 `terraform-infra`→`opentofu-infra` 대체, 4개 하네스 참조 일괄 갱신) | 전체 하네스, `docs/guides/tech-stack.md` | IaC를 OpenTofu(topu)로 사용 요청 |
+| 2026-07-08 | 4개 하네스 3회 반복 검증(28 에이전트) 후 우선순위 로드맵 전체 적용: 실험 플래그(`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`) 전제조건·Phase 0 프리플라이트·GA 폴백 문서화(팀 3종), `agent_type` 전용 타입명 통일, 검증 게이트 객관화, 루프 상한, cross-repo GitOps 토큰 전제, 파일번호 슬롯 주석 등 40개 편집. 검증 보고서 `docs/harness-verification-report.md` | 전체 하네스, CLAUDE.md | 하네스 검증·오류 수정 요청 |

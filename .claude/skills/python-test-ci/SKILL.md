@@ -113,6 +113,8 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with: { enable-cache: true }
       - run: uv sync --frozen           # 락파일 그대로 재현 설치
+      - run: uv run ruff check .        # 린트 게이트 (통과해야 build-push로 진행)
+      - run: uv run mypy .              # 타입 체크 게이트
       # 단위테스트만 게이트 (실제 접속 integration 제외 → 빠르고 결정적)
       - run: uv run pytest -m "not integration"
   build-push:
