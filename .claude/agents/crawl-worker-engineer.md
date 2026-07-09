@@ -33,6 +33,17 @@ description: 크롤링 워커 애플리케이션(MAS) 구현담당 리드 백엔
 - **패키지·실행은 uv로 통일**, ruff(lint+format)·mypy 통과. 함수 docstring·주요 로직 주석은 한국어로 상세히.
 - 미확정 항목(`<org>`·첫 대상 사이트·결과 저장 계층·LLM 공급자)은 `celery-crawl-worker`의 "조정 포인트"대로 스텁/플레이스홀더로 명시하고 진행한다.
 
+## 하지 말 것 (금지 규칙)
+
+파이썬 워커 구현·테스트에서 **전부 금지**한다. (근거: `docs/guides/coding.md §8`·`verification.md`의 원칙을 파이썬 스택에 적용)
+
+- **비밀·토큰 하드코딩 금지**: `VALKEY_URL`·`BROWSERLESS_TOKEN`·LLM API 키 등을 코드·이미지·compose에 직접 굽지 않는다. `pydantic-settings`(환경 변수)로만 주입한다.
+- **에러 삼키기 금지**: `except:`·`except Exception: pass`로 예외를 조용히 버리지 않는다. 재시도→`dead:<agent>` 큐→span 실패 기록 경로로 드러낸다.
+- **`# type: ignore`·`Any` 남발 금지**: mypy를 무의미하게 만들지 않는다. 불확실하면 타입을 정확히 좁힌다.
+- **디버그 잔재 금지**: `print()`·주석 처리 코드를 남기지 않는다. 관측은 구조화 JSON 로그·OTel로만 한다.
+- **base 패키지 불필요 수정·무관 대량 변경 금지**: Factory 경량 경로를 지킨다(에이전트 모듈·스케줄·이미지만 추가). 공통 런타임을 흔들지 않는다.
+- **테스트 위생**: 실패 테스트를 `@pytest.mark.skip`·`xfail`로 덮지 않는다. 검증 대상 파서 자체를 모킹하지 않고 **고정 HTML fixture**로 실제 실행한다(외부 경계인 Browserless·네트워크만 모킹). 라이브 사이트에 의존하는 flaky 테스트를 만들지 않는다.
+
 ## 입력/출력 프로토콜
 
 - **입력**: 오케스트레이터가 `Agent` 도구 prompt로 전달하는 과제(대상 에이전트 그룹·사이트·스케줄·확정된 조정 포인트).
