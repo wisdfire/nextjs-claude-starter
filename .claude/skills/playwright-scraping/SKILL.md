@@ -5,6 +5,8 @@ description: Playwright로 동적 렌더링 페이지를 스크래핑할 때 반
 
 # Playwright 동적 스크래핑 하네스
 
+> ⚠️ **크롤링 워커(MAS) 트랙에서 이 스킬을 쓸 때**: 아래 예제는 async API로 쓰여 있지만, 워커는 Celery prefork와의 정합을 위해 **sync API를 강제**한다(`chromium.launch()` / `page.wait_for_selector()`). 브라우저 수명주기·메모리 예산(컨테이너 700M, `--disable-dev-shm-usage`)은 **`celery-crawl-worker` 계약이 우선**한다. 여기서 가져갈 것은 *대기 전략·타임아웃/재시도·Anti-Bot·Factory 구조*이며, API 형태와 리소스 규약이 아니다.
+
 ## Why: 왜 각 방어 기법이 필요한가
 
 정적 `requests`로는 JS로 그려지는 콘텐츠를 못 본다. 그래서 실제 브라우저(Playwright)를 띄운다. 하지만 브라우저는 (1) **무겁고 메모리를 먹으며**, (2) **봇으로 탐지·차단되고**, (3) **네트워크가 느리면 무한 대기**한다. 아래 기법들은 각각 이 세 가지 실패를 막기 위한 것이다. 이유를 이해하고 적용하라 — 습관적 복붙이 아니라.
@@ -112,7 +114,7 @@ class NewsSiteScraper(BaseScraper):
 
 ## 책임 경계
 
-이 단계의 산출물은 **완전 렌더링된 원본 HTML + HTML shape(목표 셀렉터·구조) 문서**다. 정제·추출은 하지 말고 extraction 단계에 넘겨라.
+이 스킬의 산출물은 **완전 렌더링된 원본 HTML + HTML shape(목표 셀렉터·구조)** 다. 그 HTML을 구조화 데이터로 바꾸는 일(파싱·검증·LLM 폴백)은 **워커의 하이브리드 파싱 프레임**이 맡는다 — `celery-crawl-worker` 계약의 "데이터 파싱 전략(80/20)"을 따르고, 결과는 `CrawlResult` Pydantic 모델로 검증한다.
 
 ## 체크리스트
 

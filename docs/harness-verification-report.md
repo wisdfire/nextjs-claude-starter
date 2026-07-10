@@ -1,5 +1,14 @@
 # 하네스 에이전트팀 4팀 검증 보고서
 
+> ⚠️ **부분 초과(superseded) — 2026-07-10**
+> 이 보고서는 2026-07-08 시점의 스냅샷이다. 이후 크롤링 워커 하네스의 실행 인프라가
+> **K3s+KEDA+Browserless+GHCR/GitOps → 단일 EC2 + Docker Compose + ECR + SSM**으로 교체되면서,
+> 아래 **크롤링워커 관련 발견은 대상이 사라져 무효**다: cross-repo GitOps 토큰(`GITOPS_TOKEN`) 전제조건,
+> `python:3.14-slim` 검증항목, Browserless CDP 브라우저 수명주기 테스트.
+> 인용된 `SKILL.md:<줄번호>`도 재작성으로 더 이상 맞지 않는다.
+> 현행 계약은 `.claude/skills/celery-crawl-worker/SKILL.md`가 단일 진실 공급원이다.
+> 나머지 3개 하네스(풀스택 웹·데이터 파이프라인·리서치→PRD)에 대한 발견은 그대로 유효하다.
+
 > **작성일**: 2026-07-08 · **대상**: `.claude/skills/*-orchestrator` 4개 하네스 + 연결 에이전트 17종 · **프로젝트**: next-js-starter-kit
 > **검증 규모**: 3회 반복 × 4팀 병렬 감사(12) + 치명/중대 발견 적대적 검증(12) + 팀별 3회차 통합(4) = **에이전트 28개 · 서브 토큰 ~198만 · 오류 0**
 

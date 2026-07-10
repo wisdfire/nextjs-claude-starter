@@ -119,12 +119,15 @@ jobs:
       - run: uv run pytest -m "not integration"
   build-push:
     needs: test                         # ← 테스트 통과가 빌드·배포의 전제
-    runs-on: ubuntu-latest
-    steps: [ ... 이미지 빌드·push ... ]
+    # ★ arm64 네이티브 러너. 대상 서버가 Graviton(t4g)이므로 아키텍처를 맞춘다.
+    #   x86 러너 + QEMU는 5~10배 느리고, 틀리면 서버에서 exec format error가 난다.
+    runs-on: ubuntu-24.04-arm
+    steps: [ ... arm64 이미지 빌드 → ECR push → SSM 배포 ... ]
 ```
 
 - `uv run pytest -m "not integration"` 실패 시 `build-push`가 실행되지 않아 **배포가 차단**된다.
-- 배포 파이프라인 전체 구성은 워커 트랙 계약(`celery-crawl-worker` 스킬: 이미지 빌드→GHCR push→GitOps PR)과 정합한다(같은 `needs:` 체인 — pytest 통과가 빌드·push의 전제).
+- 테스트 잡은 `ubuntu-latest`로 충분하지만, **빌드 잡은 반드시 `ubuntu-24.04-arm`** 이어야 한다.
+- 배포 파이프라인 전체 구성은 워커 트랙 계약(`celery-crawl-worker` 스킬: arm64 빌드→ECR push→SSM send-command→**결과 폴링 확인**)과 정합한다(같은 `needs:` 체인 — pytest 통과가 빌드·push의 전제).
 
 ## 5. fixture 갱신 규약 — 테스트를 무력화하지 말 것
 
