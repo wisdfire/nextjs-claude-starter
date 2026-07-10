@@ -10,7 +10,7 @@ description: 크롤링 워커 애플리케이션(MAS)을 구현할 때 반드시
 ## 배경 · 스코프
 
 크롤링 실행 인프라는 **별도의 인프라 저장소 `crawling-node-infra`** 에서 구축·운영된다.
-그 인프라는 **AWS EC2 t4g.small 단일 노드**(ARM64 Graviton2, 2 vCPU / 2 GiB RAM, Ubuntu LTS)
+그 인프라는 **AWS EC2 t4g.small 단일 노드**(ARM64 Graviton2, 2 vCPU / 2 GiB RAM, Ubuntu 26.04 LTS "Resolute Raccoon")
 위에서 **Docker Compose**로 동작하며, 워커에게 다음을 제공한다.
 
 | 인프라가 제공하는 것 | 워커(이 프로젝트)가 하는 것 |
@@ -33,20 +33,20 @@ description: 크롤링 워커 애플리케이션(MAS)을 구현할 때 반드시
 
 | 계층 | 값 | 워커에 미치는 영향 |
 | --- | --- | --- |
-| 호스트 | EC2 **t4g.small** (ARM64 Graviton2, 2 vCPU / 2 GiB), Ubuntu LTS(24.04 또는 26.04), 루트 30 GiB gp3 | 이미지는 **linux/arm64 전용**. 메모리·디스크 예산의 근거 |
+| 호스트 | EC2 **t4g.small** (ARM64 Graviton2, 2 vCPU / 2 GiB), **Ubuntu 26.04 LTS "Resolute Raccoon"**, 루트 30 GiB gp3 | 이미지는 **linux/arm64 전용**. 메모리·디스크 예산의 근거 |
 | 브로커 | **Valkey `8.1-alpine`** (`maxmemory 512mb`, `noeviction`, `appendonly yes`) | `redis://` 스킴으로 접속. 쓰기 거부 에러를 삼키면 안 됨 |
 | 레지스트리 | ECR (`MUTABLE` 태그, `scan_on_push`, **최근 10개 보관**) | 11번째 이전 버전으로는 롤백 불가 |
 | IaC | OpenTofu **1.12.3**, AWS provider `~> 5.0` | 워커는 IaC를 다루지 않음 (`opentofu-infra` 스킬) |
 | 관측 수집 | Grafana Alloy `v1.5.1`, redis_exporter `v1.67.0-alpine`, node_exporter `v1.8.2`, cAdvisor `v0.49.1` | Alloy가 `prometheus.scrape`만 함 → **워커는 `/metrics` pull로 노출** |
-| CI 러너 | `ubuntu-24.04-arm` (네이티브 arm64) | x86 러너 + QEMU는 5~10배 느림 |
+| CI 러너 | `ubuntu-26.04-arm` (네이티브 arm64, 현재 GitHub public preview) | x86 러너 + QEMU는 5~10배 느림. preview라 큐잉·불안정 가능 → 문제 시 `ubuntu-24.04-arm`로 임시 하향 가능(빌드만, 이미지엔 무관) |
 | CI 액션 | `actions/checkout@v4`, `aws-actions/configure-aws-credentials@v4`, `aws-actions/amazon-ecr-login@v2` | OIDC 인증 |
 
 ### 워커가 고정하는 값
 
 | 항목 | 핀 | 근거 |
 | --- | --- | --- |
-| 베이스 이미지 | **`mcr.microsoft.com/playwright/python:v1.61.0-noble`** | 인프라 지정. arm64 멀티아키. 브라우저·시스템 라이브러리 포함 |
-| Python | **3.14** (uv가 설치) | 인프라 지정. ★ 이미지 내장 Python은 **3.12**다 — 그냥 두면 3.12로 돌아간다 |
+| 베이스 이미지 | **`mcr.microsoft.com/playwright/python:v1.61.0-resolute`** | 인프라 지정. `resolute` = Ubuntu 26.04 LTS. arm64 멀티아키(`-arm64` 변형 존재). 브라우저·시스템 라이브러리 포함 |
+| Python | **3.14** (uv가 3.14.6로 pin 설치) | 인프라 지정. ★ resolute(26.04) 이미지 내장 시스템 Python은 **이미 3.14**다 — 그래도 uv로 설치하는 이유는 3.12 회피가 아니라 **패치(3.14.6)를 uv.lock에 고정해 재현성 확보**(시스템 Python은 패치가 이미지 재빌드마다 드리프트) |
 | uv | `ghcr.io/astral-sh/uv` — **버전 태그로 pin** (검증본 `0.11.28`) | `:latest`는 재현성을 깬다 |
 | Celery | `celery[redis]>=5.6.3` | `[redis]` extra가 kombu의 redis 트랜스포트를 가져온다 |
 | Playwright (pip) | **`==1.61.0`** — 베이스 이미지 태그와 **정확히 일치** | 어긋나면 `Executable doesn't exist` |
@@ -57,6 +57,8 @@ description: 크롤링 워커 애플리케이션(MAS)을 구현할 때 반드시
 
 **인프라가 arm64에서 실제로 빌드해 검증한 조합**: Python `3.14.6` · uv `0.11.28` · Celery `5.6.3` · Chromium `149` 렌더링 + Valkey 연결 후 태스크 처리까지 확인.
 
+> ℹ️ 베이스 이미지가 `noble`(24.04)→`resolute`(26.04)로 이동했다. `resolute`는 시스템 Python이 3.14라 이미지 자체가 3.14 기반이지만, 위 pin 조합(3.14.6 등)은 이전 검증치이므로 **인프라 저장소의 갱신된 `docs/03_cicd.md` §4-1을 단일 진실 공급원으로 재확인**한다(특히 인프라가 resolute에서 `uv python install 3.14`를 유지하는지, 시스템 3.14로 전환했는지). 값이 다르면 이 표를 먼저 갱신한다.
+
 > ⚠️ **Celery는 3.14를 공식 분류자에 올리지 않았다.** PyPI 메타데이터상 `celery 5.6.3`의 지원 표기는 3.9~3.13이고 `requires-python`은 `>=3.9`라 설치·실행에 문제는 없다(`billiard`·`kombu`·`vine` 모두 순수 파이썬). 인프라가 실제 구동까지 검증했으나 **"공식 보증"은 없다.** 우리가 기대는 prefork 프로세스 관리(fork·`worker_process_init`·`max_tasks_per_child`)가 정확히 그 취약 지점이므로 **prefork 스모크 테스트를 CI 게이트에 필수로 둔다**(§테스트). 참고로 `playwright 1.61.0`은 3.14 분류자를 명시 선언한다. 또한 **CPython에는 "LTS" 등급이 없다** — 모든 마이너 버전이 동일하게 약 2년 버그픽스 + 3년 보안 패치를 받는다.
 
 ### Dockerfile 규격 (인프라 `docs/03_cicd.md` §4-1 준수)
@@ -64,7 +66,7 @@ description: 크롤링 워커 애플리케이션(MAS)을 구현할 때 반드시
 ```dockerfile
 # arm64 멀티아키 공식 이미지. 브라우저 바이너리는 /ms-playwright에 있고
 # 파이썬 버전과 무관하므로, uv로 3.14를 따로 깔아도 그대로 재사용된다.
-FROM mcr.microsoft.com/playwright/python:v1.61.0-noble
+FROM mcr.microsoft.com/playwright/python:v1.61.0-resolute
 
 # uv 바이너리를 공식 이미지에서 복사 (pip으로 uv를 설치할 필요 없음).
 # ★ :latest 대신 버전 태그로 pin 할 것 — 빌드 재현성.
@@ -74,7 +76,8 @@ WORKDIR /app
 # 의존성만 먼저 복사해 레이어 캐시를 살린다 (코드만 바뀌면 재설치 안 함)
 COPY pyproject.toml uv.lock ./
 
-# uv가 3.14를 내려받아 그 버전으로 .venv를 만든다. 이미지 내장 3.12는 쓰이지 않는다.
+# uv가 3.14.6을 내려받아 .venv를 만든다. resolute(26.04) 내장 시스템 Python도 3.14지만,
+# 패치를 uv.lock에 고정해 재현성을 확보하려고 uv 관리 버전을 쓴다.
 RUN uv python install 3.14 \
  && uv sync --frozen --no-dev --python 3.14
 
@@ -85,8 +88,8 @@ COPY . .
 CMD ["celery", "-A", "worker.app", "worker", "--loglevel=INFO", "--concurrency=1", "-E"]
 ```
 
-- ★ **`UV_SYSTEM_PYTHON=1`을 걸지 마라.** 이 구성은 의도적으로 **uv 관리 Python(3.14)** 을 쓴다. 시스템 Python을 강제하면 이미지 내장 3.12로 되돌아간다.
-- **이미지는 압축 해제 시 약 4GB다** (브라우저 3종 + 파이썬 2개). 배포마다 t4g.small이 이만큼 pull하므로 `aws ssm wait command-executed`(약 100초 한계)로는 정상 배포를 실패로 오탐한다 — `get-command-invocation` 폴링을 쓴다(§배포 계약). 루트 30GiB를 지키려면 배포 시 `docker image prune`이 필수다.
+- ★ **`UV_SYSTEM_PYTHON=1`을 걸지 마라.** 이 구성은 의도적으로 **uv 관리 Python(3.14.6 pin)** 을 쓴다. 시스템 Python을 강제하면 resolute 내장 3.14(패치 미고정)로 되돌아가 uv.lock 재현성이 깨진다.
+- **이미지는 압축 해제 시 약 4GB다** (브라우저 3종 + 파이썬 2개: resolute 시스템 3.14 + uv 관리 3.14.6). 배포마다 t4g.small이 이만큼 pull하므로 `aws ssm wait command-executed`(약 100초 한계)로는 정상 배포를 실패로 오탐한다 — `get-command-invocation` 폴링을 쓴다(§배포 계약). 루트 30GiB를 지키려면 배포 시 `docker image prune`이 필수다.
 - (선택) Chromium만 쓰므로 빌드 단계에서 `/ms-playwright`의 firefox·webkit 디렉터리를 지워 이미지를 줄일 수 있다. 인프라 문서가 허용하는 경로다. **삭제 후 Chromium 기동 스모크 테스트로 검증한 뒤에만** 적용한다.
 - **브라우저가 필요 없는 요청 기반 워커**(httpx 등)라면 `python:3.14-slim-trixie` 경량 구성으로 약 300MB까지 줄어든다. 단 이 계약의 하이브리드 파싱은 브라우저를 전제하므로 기본 경로가 아니다.
 
@@ -101,7 +104,7 @@ CMD ["celery", "-A", "worker.app", "worker", "--loglevel=INFO", "--concurrency=1
 ## 인프라 계약 12항 (반드시 준수 — 위반 시 배포·관측이 동작하지 않는다)
 
 1. **아키텍처: linux/arm64 전용.** t4g는 Graviton(ARM64)이다. amd64 이미지를 배포하면 서버에서
-   `exec format error`로 컨테이너가 뜨지 않는다. 빌드는 `ubuntu-24.04-arm` **네이티브 러너**에서
+   `exec format error`로 컨테이너가 뜨지 않는다. 빌드는 `ubuntu-26.04-arm` **네이티브 러너**에서
    `docker build --platform linux/arm64`로 한다. x86 러너 + QEMU는 5~10배 느리다.
 2. **브로커 접속**: 워커 compose는 인프라가 만든 네트워크에 external로 합류한다
    (`name: crawling-infra_crawling-net`). 그러면 호스트명 `valkey`로 직접 닿는다.
@@ -259,7 +262,7 @@ CMD ["celery", "-A", "worker.app", "worker", "--loglevel=INFO", "--concurrency=1
    로컬이 arm64가 아니면 `--platform linux/arm64` 빌드가 QEMU로 느려질 수 있음을 문서에 명시한다.
 5. **테스트**: 파싱 로직 단위 테스트(고정 HTML fixture), 폴백 트리거 테스트, 계약 스키마 테스트.
    - ★ **prefork 스모크 테스트(필수, integration 마커)**: Celery가 3.14를 공식 지원하지 않으므로 **실제 워커를 prefork 풀로 띄워** ①자식 프로세스가 fork되고 ②`worker_process_init`이 발화해 `/metrics`(9464)가 응답하며 ③`max_tasks_per_child` 도달 시 자식이 재활용된 뒤에도 태스크가 계속 처리되는지 확인한다. 이 셋 중 하나라도 깨지면 3.14를 쓸 수 없다는 뜻이므로 즉시 보고하고 3.13으로 내린다.
-6. **CI(GitHub Actions)**: pytest·ruff·mypy 게이트 → `ubuntu-24.04-arm` 러너에서 arm64 이미지 빌드
+6. **CI(GitHub Actions)**: pytest·ruff·mypy 게이트 → `ubuntu-26.04-arm` 러너에서 arm64 이미지 빌드
    → ECR push → SSM 배포 → **배포 결과 폴링 확인**을 `needs:` 체인으로 구성한다.
 7. **코드 품질**: ruff(lint+format), mypy. 모든 함수 docstring과 주요 로직 인라인 주석은 초보
    개발자가 흐름을 파악할 수 있도록 한국어로 상세히 작성한다.
@@ -319,7 +322,7 @@ KEDA·Browserless·GitOps 재도입 요청이 오면 폐기 사실을 알리고 
 파이썬 워커 구현·테스트에서 **전부 금지**한다. (근거: `docs/guides/coding.md §8`·`verification.md`의 원칙을 파이썬 스택에 적용)
 
 - **비밀·토큰 하드코딩 금지**: `CELERY_BROKER_URL`·`VALKEY_PASSWORD`·LLM API 키를 코드·이미지·compose에 직접 굽지 않는다 — `pydantic-settings`(환경 변수)로만 주입.
-- **`UV_SYSTEM_PYTHON=1` 금지**: 이 구성은 uv 관리 Python 3.14를 쓴다. 시스템 Python을 강제하면 이미지 내장 3.12로 되돌아간다.
+- **`UV_SYSTEM_PYTHON=1` 금지**: 이 구성은 uv 관리 Python 3.14.6(pin)을 쓴다. 시스템 Python을 강제하면 resolute 내장 3.14(패치 미고정)로 되돌아가 재현성이 깨진다.
 - **`:latest` 태그 금지**: 워커 이미지도, `COPY --from=ghcr.io/astral-sh/uv`도 버전으로 pin한다.
 - **에러 삼키기 금지**: `except:`·`except Exception: pass`로 예외를 조용히 버리지 않는다 — 재시도→`dead:<agent>` 큐→`crawl_task_failures_total` 경로로 드러낸다. 특히 **Valkey `noeviction` OOM 에러(`OOM command not allowed`)를 삼키면 잡 유실이 은폐된다.**
 - **큐 이름 변경 금지**: 기본 큐 `celery`를 벗어나면 인프라의 `CeleryQueueBacklog`·`CeleryQueueIdle`이 죽는다(check-keys 고정).

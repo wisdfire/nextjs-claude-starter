@@ -26,7 +26,7 @@ description: 크롤링 워커 애플리케이션(MAS) 구현담당 리드 백엔
 
 - **시작 전에 계약을 요약해 이해한 바를 보고**하고, 프로젝트 뼈대(구조/pyproject/도커/컴포즈)부터 단계적으로 구현한다. 각 단계 완료 시 실행·테스트로 검증하고 결과를 보고한다.
 - **인프라 계약은 협상 대상이 아니다**: 기본 큐 `celery` 유지, CrawlJob 페이로드, Celery 필수 설정(`task_acks_late`·`worker_prefetch_multiplier=1`·`task_ignore_result`), 환경변수 규격, SIGTERM warm shutdown, 300초 예산, 700M 메모리 계약, arm64 전용을 위반하면 배포·관측이 깨진다.
-- **arm64가 최우선 제약**이다. 이미지·베이스 이미지·CI 러너(`ubuntu-24.04-arm`)를 전부 arm64로 맞춘다. amd64를 배포하면 서버에서 `exec format error`가 난다.
+- **arm64가 최우선 제약**이다. 이미지·베이스 이미지(`v1.61.0-resolute` = Ubuntu 26.04)·CI 러너(`ubuntu-26.04-arm`)를 전부 arm64로 맞춘다. amd64를 배포하면 서버에서 `exec format error`가 난다.
 - **메모리 700M이 두 번째 제약**이다. 브라우저는 태스크당 1개, finally로 반드시 close, `--disable-dev-shm-usage`. 좀비 브라우저가 OOM Killer를 부르면 **Valkey가 먼저 죽고 큐 전체가 사라진다.**
 - **Playwright는 sync API만** 사용한다(Celery prefork 정합). 동시성은 `--concurrency=1`이며, 확장은 인스턴스 타입 상향(scale-up)으로 한다 — 오토스케일러는 없다.
 - **메트릭 서버는 `worker_process_init` 시그널에서 연다**(prefork + concurrency 1). 모듈 import 시점에 `start_http_server(9464)`를 부르면 자식들이 포트를 두고 충돌한다. solo/threads 풀을 쓰면 `worker_ready` 시그널을 쓰되, `max_tasks_per_child`가 동작하지 않아 Playwright 누수를 끊지 못함을 감수해야 한다. concurrency를 2 이상 올릴 때에만 `PROMETHEUS_MULTIPROC_DIR` + `MultiProcessCollector`가 필요하다.
@@ -43,7 +43,7 @@ description: 크롤링 워커 애플리케이션(MAS) 구현담당 리드 백엔
 파이썬 워커 구현·테스트에서 **전부 금지**한다. (근거: `docs/guides/coding.md §8`·`verification.md`의 원칙을 파이썬 스택에 적용)
 
 - **비밀·토큰 하드코딩 금지**: `CELERY_BROKER_URL`·`VALKEY_PASSWORD`·LLM API 키 등을 코드·이미지·compose에 직접 굽지 않는다. `pydantic-settings`(환경 변수)로만 주입한다.
-- **`UV_SYSTEM_PYTHON=1` 금지**: uv 관리 Python 3.14를 쓴다. 시스템 Python을 강제하면 이미지 내장 3.12로 되돌아간다.
+- **`UV_SYSTEM_PYTHON=1` 금지**: uv 관리 Python 3.14.6(pin)을 쓴다. resolute(26.04) 이미지 내장 시스템 Python도 3.14지만 패치가 고정되지 않으므로, 시스템 Python을 강제하면 uv.lock 재현성이 깨진다.
 - **에러 삼키기 금지**: `except:`·`except Exception: pass`로 예외를 조용히 버리지 않는다. 재시도→`dead:<agent>` 큐→실패 메트릭 경로로 드러낸다. 특히 Valkey `noeviction` OOM 에러를 삼키면 잡 유실이 은폐된다.
 - **`# type: ignore`·`Any` 남발 금지**: mypy를 무의미하게 만들지 않는다. 불확실하면 타입을 정확히 좁힌다.
 - **디버그 잔재 금지**: `print()`·주석 처리 코드를 남기지 않는다. 관측은 구조화 JSON 로그·Prometheus 지표로만 한다.
@@ -74,8 +74,8 @@ description: 크롤링 워커 애플리케이션(MAS) 구현담당 리드 백엔
 - **300초 예산 초과 위험**: LLM 폴백 포함 소요시간을 `crawl_task_duration_seconds`로 측정하고, 초과 패턴이 보이면 오케스트레이터에 보고(사이트 분리·스케줄 조정 제안). compose `stop_grace_period: 300s`가 없으면 배포 시 태스크가 잘린다.
 - **429/403 급증**: IP 차단 진행 중이다. 재시도가 상황을 악화시키므로 rate limit을 낮추고 `crawl_http_status_total`로 드러낸다.
 - **Celery가 Python 3.14에서 오작동**: Celery 5.6.3은 3.14를 공식 선언하지 않았다. prefork 스모크 테스트(fork·`worker_process_init`→`/metrics`·`max_tasks_per_child` 재활용)가 깨지면 **3.13으로 내리고** 결정을 산출물에 기록한다. 억지로 우회하지 않는다.
-- **`Executable doesn't exist`**: pip의 `playwright` 버전이 베이스 이미지 태그(`v1.61.0-noble`)와 어긋난 것이다. 둘을 같은 커밋에서 함께 올린다.
-- **파이썬이 3.12로 돌아감**: 공식 이미지 내장 Python이 3.12다. `uv python install 3.14 && uv sync --python 3.14` 후 `ENV PATH="/app/.venv/bin:$PATH"`가 빠졌거나 `UV_SYSTEM_PYTHON=1`이 걸린 것이다.
+- **`Executable doesn't exist`**: pip의 `playwright` 버전이 베이스 이미지 태그(`v1.61.0-resolute`)와 어긋난 것이다. 둘을 같은 커밋에서 함께 올린다.
+- **파이썬 패치가 uv.lock과 어긋남**: resolute 내장 시스템 Python은 3.14(패치 미고정)다. `uv python install 3.14 && uv sync --python 3.14` 후 `ENV PATH="/app/.venv/bin:$PATH"`가 빠졌거나 `UV_SYSTEM_PYTHON=1`이 걸리면 uv가 pin한 3.14.6 대신 시스템 3.14가 잡혀 재현성이 깨진다.
 - **`uv sync`가 거부**: `pyproject.toml`의 `requires-python`과 Dockerfile의 `--python 3.14`가 어긋난 것이다.
 - **Flower가 빈 화면**: 워커 CMD에 `-E`(이벤트 발행)가 빠졌다.
 
