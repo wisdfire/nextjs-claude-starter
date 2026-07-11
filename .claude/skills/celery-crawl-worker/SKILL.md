@@ -41,23 +41,25 @@ description: 크롤링 워커 애플리케이션(MAS)을 구현할 때 반드시
 | CI 러너 | `ubuntu-26.04-arm` (네이티브 arm64, 현재 GitHub public preview) | x86 러너 + QEMU는 5~10배 느림. preview라 큐잉·불안정 가능 → 문제 시 `ubuntu-24.04-arm`로 임시 하향 가능(빌드만, 이미지엔 무관) |
 | CI 액션 | `actions/checkout@v4`, `aws-actions/configure-aws-credentials@v4`, `aws-actions/amazon-ecr-login@v2` | OIDC 인증 |
 
+> ℹ️ 위 표는 인프라 `variables.tf` **기본값** 기준이다. 실배포 `terraform.tfvars`가 인스턴스를 상향했을 수 있다(예: t4g.medium 4GiB, Valkey maxmemory 1gb/컨테이너 1536M). 그래도 **워커 계약값(700M·concurrency 1)은 인프라 compose 명세(`docs/03_cicd.md` §4-2)가 바뀌기 전까지 유지**한다 — 계약의 기준은 tfvars가 아니라 §4-2다.
+
 ### 워커가 고정하는 값
 
 | 항목 | 핀 | 근거 |
 | --- | --- | --- |
-| 베이스 이미지 | **`mcr.microsoft.com/playwright/python:v1.61.0-resolute`** | 인프라 지정. `resolute` = Ubuntu 26.04 LTS. arm64 멀티아키(`-arm64` 변형 존재). 브라우저·시스템 라이브러리 포함 |
-| Python | **3.14** (uv가 3.14.6로 pin 설치) | 인프라 지정. ★ resolute(26.04) 이미지 내장 시스템 Python은 **이미 3.14**다 — 그래도 uv로 설치하는 이유는 3.12 회피가 아니라 **패치(3.14.6)를 uv.lock에 고정해 재현성 확보**(시스템 Python은 패치가 이미지 재빌드마다 드리프트) |
+| 베이스 이미지 | **`mcr.microsoft.com/playwright/python:v1.61.0-noble`** | 인프라 지정(`docs/03_cicd.md` §4-1). `noble` = Ubuntu 24.04 LTS. arm64 멀티아키. 브라우저·시스템 라이브러리 포함 |
+| Python | **3.14** (uv가 3.14.6로 pin 설치) | 인프라 지정. ★ noble(24.04) 이미지 내장 시스템 Python은 **3.12**다 — `uv python install 3.14`로 덮어써야 하며, 패치(3.14.6)는 uv.lock에 고정해 재현성을 확보한다 |
 | uv | `ghcr.io/astral-sh/uv` — **버전 태그로 pin** (검증본 `0.11.28`) | `:latest`는 재현성을 깬다 |
 | Celery | `celery[redis]>=5.6.3` | `[redis]` extra가 kombu의 redis 트랜스포트를 가져온다 |
 | Playwright (pip) | **`==1.61.0`** — 베이스 이미지 태그와 **정확히 일치** | 어긋나면 `Executable doesn't exist` |
 | prometheus-client | `>=0.21.0` | 인프라 지정 |
 | Pydantic | v2 + pydantic-settings | cp314 휠 제공 확인됨 |
-| ScrapeGraphAI | 최신 안정 (`>=3.12,<4.0` 허용) | **LLM 파싱 폴백 전용.** 3.14 실동작은 미검증 → 구현 시 확인 |
+| ScrapeGraphAI | **`==2.1.5` 정확 pin** | **LLM 파싱 폴백 전용.** 최신 3.x는 Python 3.14 미지원 이슈가 있어 2.1.5가 실워커 검증본 — 3.x 승급은 3.14 지원 확인 후에만 |
 | `pyproject.toml` | `requires-python = ">=3.14"` | Dockerfile의 `--python 3.14`와 어긋나면 `uv sync`가 거부 |
 
-**인프라가 arm64에서 실제로 빌드해 검증한 조합**: Python `3.14.6` · uv `0.11.28` · Celery `5.6.3` · Chromium `149` 렌더링 + Valkey 연결 후 태스크 처리까지 확인.
+**인프라가 arm64에서 실제로 빌드해 검증한 조합**: Python `3.14.6` · uv `0.11.28` · Celery `5.6.3` · Chromium `149` 렌더링 + Valkey 연결 후 태스크 처리까지 확인. 실제 워커 저장소도 동일 조합(noble 기반)으로 가동 중이다.
 
-> ℹ️ 베이스 이미지가 `noble`(24.04)→`resolute`(26.04)로 이동했다. `resolute`는 시스템 Python이 3.14라 이미지 자체가 3.14 기반이지만, 위 pin 조합(3.14.6 등)은 이전 검증치이므로 **인프라 저장소의 갱신된 `docs/03_cicd.md` §4-1을 단일 진실 공급원으로 재확인**한다(특히 인프라가 resolute에서 `uv python install 3.14`를 유지하는지, 시스템 3.14로 전환했는지). 값이 다르면 이 표를 먼저 갱신한다.
+> ℹ️ `resolute`(Ubuntu 26.04) 태그가 레지스트리에 존재하지만(시스템 Python 3.14), **인프라 `docs/03_cicd.md` §4-1도 실제 워커도 아직 `noble`이다.** resolute 전환은 인프라 저장소가 §4-1을 갱신하고 arm64 재검증을 마친 뒤에만 따라간다 — 워커·이 문서가 먼저 이동하지 않는다(2026-07-11 한 차례 선행 이동했다가 3자 검증에서 noble로 회귀).
 
 > ⚠️ **Celery는 3.14를 공식 분류자에 올리지 않았다.** PyPI 메타데이터상 `celery 5.6.3`의 지원 표기는 3.9~3.13이고 `requires-python`은 `>=3.9`라 설치·실행에 문제는 없다(`billiard`·`kombu`·`vine` 모두 순수 파이썬). 인프라가 실제 구동까지 검증했으나 **"공식 보증"은 없다.** 우리가 기대는 prefork 프로세스 관리(fork·`worker_process_init`·`max_tasks_per_child`)가 정확히 그 취약 지점이므로 **prefork 스모크 테스트를 CI 게이트에 필수로 둔다**(§테스트). 참고로 `playwright 1.61.0`은 3.14 분류자를 명시 선언한다. 또한 **CPython에는 "LTS" 등급이 없다** — 모든 마이너 버전이 동일하게 약 2년 버그픽스 + 3년 보안 패치를 받는다.
 
@@ -66,7 +68,7 @@ description: 크롤링 워커 애플리케이션(MAS)을 구현할 때 반드시
 ```dockerfile
 # arm64 멀티아키 공식 이미지. 브라우저 바이너리는 /ms-playwright에 있고
 # 파이썬 버전과 무관하므로, uv로 3.14를 따로 깔아도 그대로 재사용된다.
-FROM mcr.microsoft.com/playwright/python:v1.61.0-resolute
+FROM mcr.microsoft.com/playwright/python:v1.61.0-noble
 
 # uv 바이너리를 공식 이미지에서 복사 (pip으로 uv를 설치할 필요 없음).
 # ★ :latest 대신 버전 태그로 pin 할 것 — 빌드 재현성.
@@ -76,8 +78,8 @@ WORKDIR /app
 # 의존성만 먼저 복사해 레이어 캐시를 살린다 (코드만 바뀌면 재설치 안 함)
 COPY pyproject.toml uv.lock ./
 
-# uv가 3.14.6을 내려받아 .venv를 만든다. resolute(26.04) 내장 시스템 Python도 3.14지만,
-# 패치를 uv.lock에 고정해 재현성을 확보하려고 uv 관리 버전을 쓴다.
+# uv가 3.14.6을 내려받아 .venv를 만든다. noble(24.04) 내장 시스템 Python은 3.12라
+# 반드시 uv로 3.14를 설치해야 하고, 패치(3.14.6)는 uv.lock에 고정돼 재현성이 확보된다.
 RUN uv python install 3.14 \
  && uv sync --frozen --no-dev --python 3.14
 
@@ -88,14 +90,15 @@ COPY . .
 CMD ["celery", "-A", "worker.app", "worker", "--loglevel=INFO", "--concurrency=1", "-E"]
 ```
 
-- ★ **`UV_SYSTEM_PYTHON=1`을 걸지 마라.** 이 구성은 의도적으로 **uv 관리 Python(3.14.6 pin)** 을 쓴다. 시스템 Python을 강제하면 resolute 내장 3.14(패치 미고정)로 되돌아가 uv.lock 재현성이 깨진다.
-- **이미지는 압축 해제 시 약 4GB다** (브라우저 3종 + 파이썬 2개: resolute 시스템 3.14 + uv 관리 3.14.6). 배포마다 t4g.small이 이만큼 pull하므로 `aws ssm wait command-executed`(약 100초 한계)로는 정상 배포를 실패로 오탐한다 — `get-command-invocation` 폴링을 쓴다(§배포 계약). 루트 30GiB를 지키려면 배포 시 `docker image prune`이 필수다.
+- ★ **`UV_SYSTEM_PYTHON=1`을 걸지 마라.** 이 구성은 의도적으로 **uv 관리 Python(3.14.6 pin)** 을 쓴다. 시스템 Python을 강제하면 noble 내장 **3.12**로 되돌아가 `requires-python = ">=3.14"`와 충돌하거나 재현성이 깨진다.
+- **2단 구성이 실증 패턴이다**: 공통 런타임은 `Dockerfile.base`, 에이전트 이미지는 `Dockerfile.agent`가 `ARG BASE_IMAGE`로 base를 주입받아 상속하고 **`USER pwuser`(non-root)** 로 실행한다(§프로젝트 구조).
+- **이미지는 압축 해제 시 약 4GB다** (브라우저 3종 + 파이썬 2개: noble 시스템 3.12 + uv 관리 3.14.6). 배포마다 t4g.small이 이만큼 pull하므로 `aws ssm wait command-executed`(약 100초 한계)로는 정상 배포를 실패로 오탐한다 — `get-command-invocation` 폴링을 쓴다(§배포 계약). 루트 30GiB를 지키려면 배포 시 `docker image prune`이 필수다.
 - (선택) Chromium만 쓰므로 빌드 단계에서 `/ms-playwright`의 firefox·webkit 디렉터리를 지워 이미지를 줄일 수 있다. 인프라 문서가 허용하는 경로다. **삭제 후 Chromium 기동 스모크 테스트로 검증한 뒤에만** 적용한다.
 - **브라우저가 필요 없는 요청 기반 워커**(httpx 등)라면 `python:3.14-slim-trixie` 경량 구성으로 약 300MB까지 줄어든다. 단 이 계약의 하이브리드 파싱은 브라우저를 전제하므로 기본 경로가 아니다.
 
 ### 런타임 스택
 
-- Celery + **Celery Beat**(스케줄러) — 브로커는 Valkey(Redis 프로토콜)
+- Celery + **Celery Beat**(스케줄러) — 브로커는 Valkey(Redis 프로토콜). Beat는 **별도 compose 서비스**로 띄운다(워커 CMD에 `-B` 금지 — 워커 재시작·스케일 시 스케줄러가 같이 죽는다). 실증 규격: 메모리 192M, `stop_grace_period: 30s`, 스케줄 파일은 볼륨으로 영속화
 - Playwright **sync API** 강제 (Celery prefork와 정합)
 - 하이브리드 파싱: Locator 직접 파싱(80%) + ScrapeGraphAI LLM 폴백(20%)
 - **prometheus_client** pull `/metrics` — OTel SDK/OTLP가 아니다 (§10)
@@ -122,6 +125,10 @@ CMD ["celery", "-A", "worker.app", "worker", "--loglevel=INFO", "--concurrency=1
      추적하지 않으므로 알림이 필요하면 인프라에 check-keys 추가를 요청한다.
    - 에이전트별 큐 분리가 정말 필요해지면 **인프라의 `REDIS_EXPORTER_CHECK_KEYS`와 알림 expr 변경이
      선행**되어야 한다. 워커가 먼저 바꾸면 관측이 조용히 죽는다.
+   - ⚠️ **다중 워커 저장소 미해결 지점**: 인프라는 워커 저장소를 여러 개 등록할 수 있는데(`workers` 맵),
+     **모든 워커가 같은 Valkey db 0의 기본 `celery` 큐를 공유하면 서로의 태스크를 잘못 소비**한다
+     (미등록 태스크 에러·유실). 반대로 큐를 분리하면 위 exporter 감시가 깨진다. **두 번째 워커 저장소가
+     실가동하기 전에** 인프라와 분리 방안(워커별 큐 + check-keys 확장, 또는 워커별 db 분리)을 확정해야 한다.
 4. **태스크 페이로드**(Pydantic 모델 `CrawlJob`): job_id(uuid4, 멱등성 키), agent, url,
    scheduled_at(ISO8601 UTC), retry_count, params(dict, 선택).
 5. **Celery 필수 설정** — ①②를 빼먹으면 워커 재시작 한 번에 잡이 사라지고, ③을 빼먹으면 며칠 뒤
@@ -150,11 +157,12 @@ CMD ["celery", "-A", "worker.app", "worker", "--loglevel=INFO", "--concurrency=1
    **Valkey를 먼저 죽이고 큐에 쌓인 잡이 통째로 사라진다.**
    - 브라우저 인스턴스는 태스크당 **1개만**.
    - Docker 기본 `/dev/shm`은 64MB라 Chromium이 크래시한다.
-     `chromium.launch(args=["--disable-dev-shm-usage"])`를 쓰거나 compose에 `shm_size: 512m`을 준다.
-     (700M 예산에서는 `--disable-dev-shm-usage`가 안전하다)
+     인프라 compose 명세(§4-2)는 **`shm_size: "256mb"`** 를 규정하며, 실증 구성은 여기에
+     `chromium.launch(args=["--disable-dev-shm-usage"])`를 **병행**한다(이중 방어).
 8. **수명주기**: SIGTERM 시 Celery warm shutdown 기본 동작 유지(커스텀 핸들러로 덮어쓰기 금지).
    compose의 `stop_grace_period` 기본값은 10초라 진행 중인 태스크가 잘린다 —
-   **`stop_grace_period: 300s`** 를 명시한다. 단일 태스크는 LLM 폴백 포함 300초 이내 완료.
+   **`stop_grace_period: 300s`** 를 명시한다(Beat 서비스는 30s면 충분). 단일 태스크는 LLM 폴백 포함 300초 이내 완료.
+   인프라 §4-2 compose 명세에는 이 항목이 빠져 있으나 **워커 계약으로 반드시 넣는다**(실워커 검증값).
 9. **브라우저**: playwright **sync API**로 `chromium.launch(...)` (로컬 실행).
    태스크 1건당 브라우저/컨텍스트 1개를 열고 **finally로 반드시 닫는다**. 좀비 브라우저는 700M을 즉시 터뜨린다.
    - **왜 Chromium인가** (이미지에는 3종이 다 있지만 런타임엔 하나만 띄운다):
@@ -165,7 +173,8 @@ CMD ["celery", "-A", "worker.app", "worker", "--loglevel=INFO", "--concurrency=1
    - 다른 엔진으로 바꾸려면 위 세 가지를 먼저 해결해야 한다. 기본값을 임의로 바꾸지 마라.
 10. **관측: Prometheus pull 방식.** 인프라의 Grafana Alloy는 `prometheus.scrape`만 하고
     **OTLP 리시버가 없다.** 따라서 워커는 `prometheus_client`로 `/metrics`(포트 **9464**)를 노출한다.
-    스크레이프 타깃은 `worker:9464` 하나다.
+    스크레이프 타깃은 **컨테이너명 `worker-<워커키>:9464`** 다 — Alloy `config.alloy`에 워커별로
+    정적 등록되므로 **compose의 컨테이너명이 이 규약과 정확히 일치**해야 긁힌다.
     - ★ **Celery는 브로커에 실패 큐를 두지 않는다.** 실패한 태스크는 브로커에서 즉시 제거되므로,
       **실패율과 데이터 품질은 워커가 직접 노출하지 않으면 영원히 알 수 없다.** 계측은 선택이 아니다.
     - ★ **prefork는 자식을 fork하므로 포트가 충돌한다.** 모듈 import 시점에 `start_http_server()`를
@@ -177,8 +186,10 @@ CMD ["celery", "-A", "worker.app", "worker", "--loglevel=INFO", "--concurrency=1
         단순하지만 `max_tasks_per_child`가 동작하지 않아 Playwright 메모리 누수를 끊지 못한다.
       - concurrency를 2 이상으로 올리면 자식마다 9464를 잡으려 해 **포트 충돌**한다. 그때는
         `PROMETHEUS_MULTIPROC_DIR` + `multiprocess.MultiProcessCollector`로 집계하고 지표 노출을
-        별도 프로세스가 맡아야 한다(Alloy의 scrape 타깃은 `worker:9464` 하나뿐이므로 자식별 포트 분리는 답이 아니다).
+        별도 프로세스가 맡아야 한다(Alloy의 scrape 타깃은 워커당 `worker-<워커키>:9464` 하나뿐이므로 자식별 포트 분리는 답이 아니다).
         지금 계약(concurrency 1)에서는 불필요하다.
+      - `max_tasks_per_child` 재활용 순간 자식이 겹칠 수 있다 — 실증 구성은 메트릭 서버에
+        `allow_reuse_port = True`(SO_REUSEPORT)를 걸어 재바인딩 충돌을 흡수한다.
     - 메트릭 이름은 **인프라의 알림 규칙(`rules/crawling.yml`의 `crawling_app` 그룹)과 맺은 계약**이다.
       임의로 바꾸면 알림이 조용히 죽는다.
 
@@ -188,11 +199,12 @@ CMD ["celery", "-A", "worker.app", "worker", "--loglevel=INFO", "--concurrency=1
       | `crawl_task_total` | `site` | 실패율의 분모 (`CrawlFailureRateHigh`) |
       | `crawl_task_failures_total` | `site`, `reason` | 실패율의 분자 (20% 초과 시 알림) |
       | `crawl_http_status_total` | `site`, `status` | 429 비율 10% 초과 → IP 차단 (`CrawlRateLimited`) |
-      | `crawl_task_duration_seconds` | `site` | 태스크 처리 시간 히스토그램 (버킷 0.5~60) |
+      | `crawl_task_duration_seconds` | `site` | 태스크 처리 시간 히스토그램 (버킷 0.5~300 — 인프라 명세는 60까지 정의하나 300초 태스크 예산을 커버하는 상위 버킷 추가는 무해하며 실증 구성이 채택) |
       | `crawl_parse_fallback_total` | `site` | LLM 폴백 = 셀렉터 수리 신호 (**워커 고유 지표 — 인프라에 알림 추가 요청 대상**) |
 
-    - 인프라의 `prometheus.yml`·`config.alloy`에서 `crawling-worker` 스크레이프 job은 **아직 주석 상태**다.
-      워커가 `/metrics`를 노출한 뒤 활성화해야 `crawling_app` 알림 그룹이 동작한다(인프라 요청 사항).
+    - 인프라 `config.alloy`의 `crawling-worker` job은 **워커별 정적 타깃**으로 이미 활성이다
+      (기존 워커들이 등록돼 있다). **새 워커는 타깃 한 줄(`worker-<워커키>:9464`) 추가를 인프라에
+      요청해야** `crawling_app` 알림 그룹이 동작한다. `prometheus.yml`은 local-stack 검증용 프로필이라 별개다.
     - 예외 추적(선택): Sentry `CeleryIntegration`을 켜면 태스크 이름·인자가 이벤트에 함께 붙는다.
     - 로그는 구조화 JSON을 stdout으로. compose 로그 로테이션(`max-size: 10m`, `max-file: 3`) 필수.
 11. **Dead man's switch (필수)**: 크롤링 장애는 조용하다 — 스케줄러가 죽으면 에러 로그조차 없다.
@@ -214,14 +226,20 @@ CMD ["celery", "-A", "worker.app", "worker", "--loglevel=INFO", "--concurrency=1
 | `METRICS_PORT` | `9464` | Alloy scrape 타깃 |
 | (선택) `LLM_API_KEY` · `SENTRY_DSN` | — | ScrapeGraphAI · Sentry(CeleryIntegration) |
 
-`VALKEY_PASSWORD`는 인프라의 `/opt/crawling-infra/.env`에서 가져와 워커의
-`/opt/crawling-worker/.env`(권한 600)에 넣는다. compose는 `ECR_REPOSITORY_URL`·`IMAGE_TAG`도 읽는다.
+`VALKEY_PASSWORD`는 서버의 배포 스크립트가 **SSM Parameter Store**(`/<project>-<env>/valkey/password`,
+SecureString)에서 읽어 워커의 `/opt/crawling-worker-<워커키>/.env`(권한 600)로 렌더한다. 워커 고유
+비밀값(LLM API 키 등)도 같은 방식으로 `SSM_PARAM_PATH`(`/<project>-<env>/workers/<워커키>`) 경로에서
+펼쳐진다 — GitHub Secrets에 넣지 않는다. compose는 `ECR_REPOSITORY_URL`·`IMAGE_TAG`도 읽는다.
 
 ## 배포 계약 (ECR + OIDC + SSM)
 
 - **트리거**: `on: { push: { branches: [main] }, workflow_dispatch: {} }`.
-  `workflow_dispatch`는 롤백·재배포에 쓰므로 반드시 함께 넣는다. PR에서는 테스트 게이트만 돌고 배포하지 않는다.
-- **레지스트리**: ECR. `${ECR_REPOSITORY_URL}:<git-sha>` 와 `:latest` 두 태그를 push하되,
+  `workflow_dispatch`는 롤백·재배포에 쓰므로 반드시 함께 넣는다.
+  - **모노레포(웹앱 + 워커 서브트리)에서는 `paths:` 필터가 필수**다 —
+    `paths: ["crawl-worker/**", ".github/workflows/<이 워크플로>.yml"]`. 없으면 웹앱 커밋마다 약 4GB 이미지를 빌드·배포한다.
+  - PR 트리거는 선택이다(실증 구성은 push[main] + dispatch만). 붙일 경우 **테스트 게이트만 돌고 배포하지 않는다.**
+- **레지스트리**: ECR. 리포지토리는 **워커별 독립**(`<project>-<env>-<워커키>`, 예: `crawling-node-prod-<워커키>`).
+  `${ECR_REPOSITORY_URL}:<git-sha>` 와 `:latest` 두 태그를 push하되,
   **배포가 참조하는 것은 항상 커밋 SHA 태그**다(`.env`의 `IMAGE_TAG`). `latest`는 수동 pull 편의용.
   ECR 수명주기가 최근 10개만 보관하므로 **그보다 오래된 버전으로는 롤백할 수 없다.**
 - **인증**: GitHub OIDC. 워크플로에 `permissions: { id-token: write, contents: read }`가 없으면
@@ -235,8 +253,13 @@ CMD ["celery", "-A", "worker.app", "worker", "--loglevel=INFO", "--concurrency=1
   `aws ssm get-command-invocation`으로 상태를 직접 폴링하라(10초 간격, 최대 15분).
   **`aws ssm wait command-executed`를 쓰지 마라** — 약 100초 후 포기하므로 **약 4GB** 이미지를
   t4g.small이 pull하는 동안 정상 진행 중인 배포를 실패로 오탐한다.
-- **GitHub Variables**(Secrets 아님 — 비밀이 아니다): `AWS_ROLE_ARN`, `ECR_REPOSITORY_URL`, `EC2_INSTANCE_ID`.
-- **서버 배치**: `/opt/crawling-worker/`에 워커의 `docker-compose.yml`과 `.env`(600). 최초 1회 수동 배치.
+- **GitHub Variables**(Secrets 아님 — 비밀이 아니다) **5종**: `AWS_ROLE_ARN`, `ECR_REPOSITORY_URL`,
+  `EC2_INSTANCE_ID`, `DEPLOY_DIR`(`/opt/crawling-worker-<워커키>`), `SSM_PARAM_PATH`(`/<project>-<env>/workers/<워커키>`).
+  인프라의 `tofu output worker_deploy_values`가 워커키별로 5개 값을 그대로 내준다.
+- **preflight 잡(권장)**: Variables 5종의 존재를 먼저 검사해 미설정이면 **빌드·배포를 조건부 스킵**하고
+  warning만 남긴다 — 인프라 미프로비저닝 상태에서도 테스트 게이트는 데드엔드 없이 성립한다.
+- **서버 배치**: `DEPLOY_DIR`(=`/opt/crawling-worker-<워커키>/`)에 워커의 `docker-compose.yml`과 `.env`(600).
+  최초 1회 수동 배치. **compose 컨테이너명은 `worker-<워커키>`** — Alloy scrape 타깃 규약(§10)과 일치해야 한다.
 - 워커 compose는 인프라 compose와 **생명주기를 분리**한다. 인프라 저장소에 워커 코드·compose·잡 스키마를 추가하지 않는다.
 - `concurrency: { group: deploy-${{ github.ref }}, cancel-in-progress: true }`로 중복 배포를 막는다.
 
@@ -254,7 +277,8 @@ CMD ["celery", "-A", "worker.app", "worker", "--loglevel=INFO", "--concurrency=1
 
 1. **모노레포 구조**: 공통 패키지(base) + 에이전트별 모듈. 베이스 이미지(공통 런타임: Celery 앱,
    Pydantic 모델, 브라우저 수명주기, Prometheus 계측, 하이브리드 파싱 프레임)를 만들고 에이전트 이미지가
-   `FROM`으로 상속하는 2단 구성. 에이전트는 사이트별 셀렉터/파싱 로직만 구현한다.
+   `FROM`으로 상속하는 2단 구성(`Dockerfile.base` → `Dockerfile.agent`가 `ARG BASE_IMAGE`로 주입받고
+   `USER pwuser`(non-root)로 실행). 에이전트는 사이트별 셀렉터/파싱 로직만 구현한다.
 2. 첫 에이전트 1개를 예시로 완성(대상 사이트는 추후 지정, 우선 example.com 스텁).
 3. **Celery Beat 스케줄** 구성(에이전트별 크론). 스케줄 정의는 코드/설정 파일로 버전 관리.
 4. **로컬 개발 환경**: docker-compose(Valkey)로 인프라 계약과 동일한 환경변수·네트워크 규격을 재현.
@@ -272,9 +296,9 @@ CMD ["celery", "-A", "worker.app", "worker", "--loglevel=INFO", "--concurrency=1
 인프라 저장소는 2026-07-10 Celery(Python) 기준으로 정렬됐다. 남은 접점은 아래뿐이며, 워커 구현 시
 발견되는 대로 보고서에 모아 전달한다. **인프라 저장소의 파일을 직접 수정하지 않는다.**
 
-- **워커 `/metrics` 수집 활성화**: `docker/prometheus/prometheus.yml`의 `crawling-worker` job과
-  `docker/alloy/config.alloy`의 `prometheus.scrape` 타깃(`worker:9464`)이 아직 주석 상태다.
-  이걸 켜야 `rules/crawling.yml`의 `crawling_app` 알림 그룹(`CrawlExtractionZero` 등)이 동작한다.
+- **워커 `/metrics` 타깃 추가**: `docker/alloy/config.alloy`의 `crawling-worker` job은 워커별
+  **정적 타깃**이다(기존 워커들은 이미 활성). 새 워커를 띄우면 `worker-<워커키>:9464` 타깃 한 줄
+  추가를 요청해야 `rules/crawling.yml`의 `crawling_app` 알림 그룹(`CrawlExtractionZero` 등)이 동작한다.
 - **`crawl_parse_fallback_total` 알림 추가**: 워커 고유 지표라 인프라 규칙에 아직 없다.
   폴백이 지속 발생하면 셀렉터 수리 신호이므로 warning 알림을 제안한다.
 - **`dead:<agent>` 큐 감시(선택)**: `REDIS_EXPORTER_CHECK_KEYS`에 추가해야 데드레터 적체를 알림으로 잡을 수 있다.
@@ -287,8 +311,8 @@ CMD ["celery", "-A", "worker.app", "worker", "--loglevel=INFO", "--concurrency=1
 
 | 항목 | 조정 |
 | --- | --- |
-| AWS 계정·리전·`ECR_REPOSITORY_URL` | 인프라 저장소에서 `tofu output -raw ecr_repository_url`로 확인 |
-| `AWS_ROLE_ARN` · `EC2_INSTANCE_ID` | `tofu output`으로 확인해 GitHub Variables에 등록 |
+| 워커키(`<워커키>`) | 인프라 `workers` 맵에 저장소가 등록돼 있어야 한다(OIDC 신뢰·ECR·배포 슬롯이 워커키 단위로 생성) |
+| GitHub Variables 5종 | 인프라 저장소에서 `tofu output worker_deploy_values`로 확인해 등록 (`AWS_ROLE_ARN`·`ECR_REPOSITORY_URL`·`EC2_INSTANCE_ID`·`DEPLOY_DIR`·`SSM_PARAM_PATH`) |
 | 첫 에이전트 대상 사이트 | 확정 후 "추후 지정" 부분에 명시 (그 전까지 example.com 스텁) |
 | 결과 저장 계층 | 태스크가 DB(upsert)에 직접 적재하는 것이 기본. Celery 결과 백엔드로 돌려받는 방식은 `task_ignore_result=True`와 상충하므로 택하지 않는다 |
 | LLM 공급자 | ScrapeGraphAI에 연결할 LLM(API 키 이름 포함) 확정 시 추가 |
@@ -322,7 +346,7 @@ KEDA·Browserless·GitOps 재도입 요청이 오면 폐기 사실을 알리고 
 파이썬 워커 구현·테스트에서 **전부 금지**한다. (근거: `docs/guides/coding.md §8`·`verification.md`의 원칙을 파이썬 스택에 적용)
 
 - **비밀·토큰 하드코딩 금지**: `CELERY_BROKER_URL`·`VALKEY_PASSWORD`·LLM API 키를 코드·이미지·compose에 직접 굽지 않는다 — `pydantic-settings`(환경 변수)로만 주입.
-- **`UV_SYSTEM_PYTHON=1` 금지**: 이 구성은 uv 관리 Python 3.14.6(pin)을 쓴다. 시스템 Python을 강제하면 resolute 내장 3.14(패치 미고정)로 되돌아가 재현성이 깨진다.
+- **`UV_SYSTEM_PYTHON=1` 금지**: 이 구성은 uv 관리 Python 3.14.6(pin)을 쓴다. 시스템 Python을 강제하면 noble 내장 **3.12**로 되돌아가 `requires-python`과 충돌하거나 재현성이 깨진다.
 - **`:latest` 태그 금지**: 워커 이미지도, `COPY --from=ghcr.io/astral-sh/uv`도 버전으로 pin한다.
 - **에러 삼키기 금지**: `except:`·`except Exception: pass`로 예외를 조용히 버리지 않는다 — 재시도→`dead:<agent>` 큐→`crawl_task_failures_total` 경로로 드러낸다. 특히 **Valkey `noeviction` OOM 에러(`OOM command not allowed`)를 삼키면 잡 유실이 은폐된다.**
 - **큐 이름 변경 금지**: 기본 큐 `celery`를 벗어나면 인프라의 `CeleryQueueBacklog`·`CeleryQueueIdle`이 죽는다(check-keys 고정).
