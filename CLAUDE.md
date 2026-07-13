@@ -26,6 +26,9 @@ npm run db:studio    # Drizzle Studio (DB GUI)
 
 ## 핵심 규칙 (항상 적용)
 
+- **🚨 구글 애드센스 심사 통과 (타협 불가 · 최우선)**: 이 스타터킷으로 만드는 웹서비스는 **반드시 구글 애드센스 심사를 통과해야 한다**. 화면·콘텐츠·라우팅·정책 페이지·광고 배치 작업 시 **`adsense-readiness` 스킬을 반드시 로드**하고 **공식 MUST 10항을 전부 충족**시킨다(= 통과 게이트). MUST를 하나라도 못 채운 구현은 **완료로 보지 않는다**.
+  - 대표 위반(= 거절 사유): **개인정보처리방침 누락**(구글 지정 문구 포함 필수 — 유일한 공식 필수 페이지) · **수집/크롤링 데이터를 원본 그대로 게시**(복제·저가치 콘텐츠 → 반드시 요약·구조화·해설로 편집 부가가치 추가) · 사람 검토 없는 **대량 자동생성 콘텐츠** · **"준비 중" 플레이스홀더 화면** · 로그인/404/빈 목록 등 **저가치 화면에 광고 렌더** · **`Mediapartners-Google` 크롤러 차단** · HTTPS 미적용 · **깨진 링크(404)** · 광고가 콘텐츠보다 많은 배치
+  - ⚠️ 구글은 통과를 **보장하지 않는다**(재량 심사). "글자수 300자·글 20개·About/Contact 필수" 같은 **근거 없는 기준을 지어내지 말 것** — 공식 최소 분량 기준은 존재하지 않는다
 - **언어**: 응답·주석·커밋·문서는 한국어, 코드 식별자는 영어 (전역 규칙 — 상세는 `~/.claude/CLAUDE.md`)
 - **주석**: 초보 개발자가 흐름을 파악할 수 있도록 함수·주요 로직·비동기 처리·사이드 이펙트에 한국어 주석을 충분히 단다
 - **Next.js 16**: 코드 작성 전 `node_modules/next/dist/docs/`의 해당 가이드를 먼저 확인할 것. 훈련 데이터와 다른 breaking change 있음. `middleware.ts` → **`proxy.ts`**로 변경됨
@@ -44,6 +47,7 @@ npm run db:studio    # Drizzle Studio (DB GUI)
 
 | 이런 작업을 시작하기 전에                          | 반드시 읽을 문서                 |
 | -------------------------------------------------- | -------------------------------- |
+| **화면·콘텐츠·정책 페이지·SEO (= 모든 웹서비스 작업)** | **`.claude/skills/adsense-readiness/SKILL.md`** (애드센스 심사 요건 단일 진실 공급원) |
 | 처음 클론·환경 설정·실행                           | `docs/guides/getting-started.md` |
 | 의존성 추가·교체, 기술 스택, 날짜/시간 처리        | `docs/guides/tech-stack.md`      |
 | 컴포넌트·라우트·Supabase 클라이언트·테마·경로 별칭 | `docs/guides/architecture.md`    |
@@ -66,20 +70,20 @@ npm run db:studio    # Drizzle Studio (DB GUI)
 
 ## 하네스 (에이전트 팀 오케스트레이터)
 
-이 프로젝트에는 4개의 범용 하네스가 구성되어 있다. 해당 도메인 작업 요청 시 아래 오케스트레이터 스킬을 사용하라. 단순 질문은 직접 응답 가능하다. 에이전트/스킬 상세는 `.claude/agents/`·`.claude/skills/`에서 관리한다(여기 중복 기재하지 않음).
+이 프로젝트에는 2개의 범용 하네스가 구성되어 있다. 해당 도메인 작업 요청 시 아래 오케스트레이터 스킬을 사용하라. 단순 질문은 직접 응답 가능하다. 에이전트/스킬 상세는 `.claude/agents/`·`.claude/skills/`에서 관리한다(여기 중복 기재하지 않음).
 
-> **⚠️ 전제조건 — 실험적 플래그(팀 기반 하네스 3종)**: 풀스택 웹 개발·데이터 파이프라인 설계·리서치→PRD 하네스는 **에이전트 팀 조율 원시도구**(`TeamCreate`·`SendMessage`·`TaskCreate`)를 쓰며, 이는 실험적 기능으로 **`export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`이 설정된 셸에서 `claude`를 실행**해야만 제공된다. 미설정 시 팀이 **조용히 단일 에이전트로 폴백**되어(오류 없이 조율·병렬·`depends_on`이 소실) 하네스 가치가 사라진다. 각 오케스트레이터는 Phase 0에서 가용성을 확인하고 미설정 시 `Agent`(GA) 서브에이전트 폴백 모드로 분기한다. **크롤링 워커 구현 하네스는 `Agent`(GA) 단일 서브에이전트라 이 플래그가 불필요**하다.
+> **⚠️ 전제조건 — 실험적 플래그**: 두 하네스 모두 **에이전트 팀 조율 원시도구**(`TeamCreate`·`SendMessage`·`TaskCreate`)를 쓰며, 이는 실험적 기능으로 **`export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`이 설정된 셸에서 `claude`를 실행**해야만 제공된다. 미설정 시 팀이 **조용히 단일 에이전트로 폴백**되어(오류 없이 조율·병렬·`depends_on`이 소실) 하네스 가치가 사라진다. 각 오케스트레이터는 Phase 0에서 가용성을 확인하고 미설정 시 `Agent`(GA) 서브에이전트 폴백 모드로 분기한다.
 
 | 하네스 | 목표 | 트리거 → 사용할 오케스트레이터 스킬 |
 | ------ | ---- | ----------------------------------- |
-| 풀스택 웹 개발 | 와이어프레임→디자인→프론트→백엔드→QA(링크 경로 검증)를 파이프라인으로 조율 | 웹사이트/화면/풀스택 개발 요청 시 → `fullstack-web-orchestrator` |
-| 데이터 파이프라인 설계 | 스키마·ETL·검증규칙·모니터링을 계층적 위임으로 설계(문서 산출) | 데이터 파이프라인/스키마/ETL/모니터링 설계 요청 시 → `data-pipeline-design-orchestrator` |
-| 리서치→PRD/ROADMAP | 웹·학술·커뮤니티 교차검증 → PRD.md(애드센스 80%+·유지보수 최소·Lighthouse 지표)·ROADMAP.md 생성 | PRD/요구사항 정의/로드맵/시장조사 요청 시 → `research-to-spec-orchestrator` |
-| 크롤링 워커 구현 | 별도 인프라(EC2 t4g.small ARM64 + Docker Compose + Valkey + ECR) 위 Celery 크롤링 워커(MAS) 구현 + arm64 이미지 ECR·SSM 배포 (Factory 확장, 구현담당 crawl-worker-engineer) | 스크래퍼/크롤러/수집 파이프라인/크롤링 워커/새 사이트·에이전트 추가/Celery/ECR/SSM 요청 시 → `scraping-pipeline-build-orchestrator` |
+| 풀스택 웹 개발 | 와이어프레임→디자인→프론트→백엔드→**애드센스 게이트**→QA(링크 경로 검증)를 파이프라인으로 조율 | 웹사이트/화면/풀스택 개발 요청 시 → `fullstack-web-orchestrator` |
+| 리서치→PRD/ROADMAP | 웹·학술·커뮤니티 교차검증 → PRD.md(**애드센스 100% 통과 필수**·유지보수 최소·Lighthouse 지표)·ROADMAP.md 생성 | PRD/요구사항 정의/로드맵/시장조사 요청 시 → `research-to-spec-orchestrator` |
 
-> **데이터 수집·크롤링(Python) 스택**은 Next.js 앱과 분리된 별도 서비스다: uv · Python 3.14(공식 Playwright 이미지 `v1.61.0-noble`=Ubuntu 24.04 LTS + `uv python install 3.14`로 3.14.6 pin — 내장 3.12 회피) · **linux/arm64 전용**(CI 러너 `ubuntu-26.04-arm`) · Celery 5.6+Valkey 8.1+Beat(별도 서비스) · Playwright 1.61.0 sync(이미지 내장 Chromium) · 하이브리드 파싱(Locator 80% + ScrapeGraphAI `==2.1.5` 폴백 20%) · Pydantic v2 · prometheus_client `/metrics` pull(+Healthchecks.io dead man's switch) · ECR push→SSM 배포 · pytest(CI 게이트). 실행 인프라는 **별도 저장소 `crawling-node-infra`** 가 소유하며, IaC 표준 도구는 **OpenTofu 1.12.x**(`opentofu-infra` 스킬, Terraform 대체). 상세는 `docs/guides/tech-stack.md`의 "데이터 수집·크롤링(Python)" 섹션 참고.
+> **🚫 Python 백엔드(크롤링·REST API·크론잡)는 이 저장소의 범위가 아니다.** 크롤링/스크래핑 워커, Python REST API, 배치·크론잡 등은 **별도 모노레포 [`wisdfire/jobhub-jobs`](https://github.com/wisdfire/jobhub-jobs)** 가 소유한다. 이 스타터킷은 **Next.js 웹서비스 전용**이다.
 >
-> ⚠️ **폐기됨**: K3s · KEDA · Browserless 원격 CDP · GHCR · ArgoCD GitOps · OTel/OTLP. 2026-07-10 인프라가 단일 EC2 + Docker Compose로 확정되며 제거됐다. 재도입 요청이 오면 폐기 사실을 알리고 현행 계약(`celery-crawl-worker` 스킬)으로 안내하라.
+> 이 저장소에서 크롤러·파이썬 배치·ETL·데이터 파이프라인 구현을 요청받으면, **직접 구현하지 말고 `jobhub-jobs` 모노레포 소관임을 알리고 그쪽에서 작업하도록 안내**하라. 웹앱은 수집 결과가 **Supabase에 이미 적재된 상태**로 도착한다고 가정하고 읽어서 렌더링하는 것까지만 담당한다 (경계 상세: `docs/guides/tech-stack.md`).
+>
+> ⚠️ **제거됨(2026-07-14)**: 크롤링 워커 구현 하네스(`scraping-pipeline-build-orchestrator`·`crawl-worker-engineer`·`celery-crawl-worker`·`playwright-scraping`·`python-test-ci`·`supabase-upsert-load`·`opentofu-infra`)와 데이터 파이프라인 설계 하네스(`data-pipeline-design-orchestrator`·`pipeline-lead`·`schema-designer`·`etl-designer`·`validation-designer`·`monitoring-designer` + 스킬 4종). 재도입 요청이 오면 모노레포 이관 사실을 알려라.
 
 **변경 이력:**
 
@@ -98,4 +102,5 @@ npm run db:studio    # Drizzle Studio (DB GUI)
 | 2026-07-10 | 인프라가 워커 Dockerfile까지 명시함에 따라 **버전 매트릭스를 인프라에서 파생**하도록 재정렬: 베이스 이미지를 slim→**공식 `mcr.../playwright/python:v1.61.0-noble` + `uv python install 3.14`**로 환원(이미지 내장 Python은 3.12 → **`UV_SYSTEM_PYTHON=1` 금지**로 규칙 반전), 환경변수명을 인프라 compose 규격(`CELERY_BROKER_URL` db0 / `CELERY_RESULT_BACKEND` db1 / `PYTHONUNBUFFERED`)으로 교체(기존 `VALKEY_URL`은 근거 없는 이름이었음), `-E` 이벤트 플래그(Flower 전제)·`--concurrency=1` 근거(700M 예산 + `/metrics` 단일 포트 바인딩) 명문화, uv `:latest` 금지, 이미지 실측 약 4GB 반영. 누락돼 있던 **CI 트리거(`on: push[main]` + `workflow_dispatch`, PR은 게이트만)** 보강 | `celery-crawl-worker`·`crawl-worker-engineer`·`scraping-pipeline-build-orchestrator`, `docs/guides/tech-stack.md`, CLAUDE.md | 인프라 설계에 따른 워커 버전 설계 요청 |
 | 2026-07-10 | 인프라 저장소가 Celery 기준으로 갱신된 뒤 2차 정렬: **큐를 `crawl:<agent>`→Celery 기본 큐 `celery`로 환원**(exporter `check-keys`가 `celery`·`unacked`·`unacked_index` 고정 — 커스텀 큐 시 `CeleryQueueBacklog` 침묵·`CeleryQueueIdle` 오탐), `task_ignore_result=True` 필수화(결과 백엔드 누적→Valkey OOM), 메트릭명을 인프라 알림 규칙에 맞춤(`crawl_task_duration_seconds`·`crawl_task_total`·`crawl_task_failures_total` 추가), 계측을 multiprocess→`worker_process_init` 1회 바인딩으로 수정 | `celery-crawl-worker`·`crawl-worker-engineer`·`scraping-pipeline-build-orchestrator`, `docs/guides/tech-stack.md`, CLAUDE.md | 인프라 저장소 Celery 전환 반영 요청 |
 | 2026-07-11 | **베이스 OS를 Ubuntu 24.04→26.04 LTS "Resolute Raccoon"으로 이동**: 베이스 이미지 `v1.61.0-noble`→**`v1.61.0-resolute`**(레지스트리에 `-arm64` 변형 실재 확인), CI 러너 `ubuntu-24.04-arm`→**`ubuntu-26.04-arm`**(현재 GitHub public preview — 문제 시 24.04로 임시 하향 가능). resolute는 **시스템 Python이 3.14**라, `uv python install 3.14`의 근거를 "내장 3.12 회피"→**"패치(3.14.6) uv.lock 고정으로 재현성 확보"**로 재구성하고 `UV_SYSTEM_PYTHON=1` 금지 사유·`파이썬 3.12로 되돌아감` 오류 문구를 전부 갱신. Python 3.14는 이전부터 확정 런타임이라 유지(CPython엔 LTS 등급 없음 — LTS는 OS인 Ubuntu 26.04). resolute 검증 조합·infra Dockerfile 방식은 인프라 `docs/03_cicd.md` §4-1로 재확인하도록 표기 | `celery-crawl-worker`·`crawl-worker-engineer`·`scraping-pipeline-build-orchestrator`·`python-test-ci`, `docs/guides/tech-stack.md`, CLAUDE.md | Python 3.14 LTS·Ubuntu 26 환경 반영 요청 |
+| 2026-07-14 | **크롤링·Python 백엔드를 모노레포 `wisdfire/jobhub-jobs`로 이관하고 하네스에서 제거** + **애드센스 심사 통과를 전 하네스의 타협 불가 게이트로 승격**. ①삭제: 에이전트 6종(`crawl-worker-engineer`·`pipeline-lead`·`schema-designer`·`etl-designer`·`validation-designer`·`monitoring-designer`), 스킬 11종(`scraping-pipeline-build-orchestrator`·`celery-crawl-worker`·`playwright-scraping`·`python-test-ci`·`supabase-upsert-load`·`opentofu-infra`·`data-pipeline-design-orchestrator`·`schema-design`·`etl-logic-design`·`data-validation-rules`·`pipeline-monitoring`) → 하네스 4개→**2개**(풀스택 웹·리서치→PRD). 검증 보고서는 `docs/archive/`로 보관 ②IaC(OpenTofu) 참조를 **배포 config-as-code(`vercel.ts`, `web-deploy-config`)** 로 대체 ③**애드센스**: `adsense-readiness` 스킬을 공식 문서 근거로 전면 재작성(**MUST 10항 / SHOULD 구분**, 출처 URL 병기)하고 CLAUDE.md 핵심 규칙·`verification.md` 커밋 전 게이트·풀스택 오케스트레이터 Phase 4.3 차단 게이트·design-architect/frontend-engineer/qa-inspector·prd-author/tech-verifier/roadmap-planner에 전파. **사실 정정**: 공식 필수 페이지는 **개인정보처리방침 1종뿐**(About·Contact·Terms는 관행), 누락돼 있던 진짜 MUST(**인증 CMP(IAB TCF)**·**HTTPS**·**`Mediapartners-Google` 차단 금지**·개인정보처리방침 구글 지정 문구) 추가, 근거 없는 "80%+·최소 분량" 기준 제거(구글은 최소 분량·통과 보장을 명시하지 않음 → **"MUST 전항 충족 + 저가치 콘텐츠 리스크 제거"** 라는 검증 가능한 게이트로 재정의) | 전체 하네스, `docs/guides/tech-stack.md`·`verification.md`, CLAUDE.md | 크롤링 업무의 모노레포 이관 + 애드센스 심사 통과 필수화 요청 |
 | 2026-07-11 | **3자 검증(템플릿 vs `crawling-node-infra` vs 실워커 `slashnow`) 후 정렬**: ①베이스 이미지를 **`v1.61.0-noble`로 회귀**(인프라 §4-1·실워커 모두 noble — resolute는 미검증, 전환은 인프라 갱신 후에만. CI 러너 `ubuntu-26.04-arm`은 실워커 검증돼 유지) ②**다중 워커 규약 반영**: 컨테이너명 `worker-<워커키>`(Alloy 정적 타깃), 배포 슬롯 `/opt/crawling-worker-<워커키>`, ECR `<project>-<env>-<워커키>`, GitHub Variables 3종→**5종**(`+DEPLOY_DIR`·`SSM_PARAM_PATH`, `tofu output worker_deploy_values`), preflight 잡, **기본 `celery` 큐 공유 시 다중 워커 상호 오소비 경고** ③ScrapeGraphAI `>=3.12`→**`==2.1.5` pin**(3.x는 3.14 미지원) ④Beat 별도 서비스 규격(192M·30s·볼륨)·`shm_size: 256mb` 병행·히스토그램 버킷 0.5~300·모노레포 `paths:` 필터 필수·`allow_reuse_port`·비밀값 SSM 렌더 반영 ⑤오케스트레이터 잔재 오류 수정("에이전트당 전용 큐"·"multiprocess 계측"·`bull:*` 문구) | `celery-crawl-worker`·`crawl-worker-engineer`·`scraping-pipeline-build-orchestrator`, `docs/guides/tech-stack.md`, CLAUDE.md | 인프라·실워커 저장소와 템플릿 비교 검증 요청 |
