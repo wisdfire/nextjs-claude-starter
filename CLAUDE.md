@@ -48,6 +48,7 @@ npm run db:studio    # Drizzle Studio (DB GUI)
 | 이런 작업을 시작하기 전에                          | 반드시 읽을 문서                 |
 | -------------------------------------------------- | -------------------------------- |
 | **화면·콘텐츠·정책 페이지·SEO (= 모든 웹서비스 작업)** | **`.claude/skills/adsense-readiness/SKILL.md`** (애드센스 심사 요건 단일 진실 공급원) |
+| **크롤링·외부 API 수집 요구사항 문서화 (모노레포 인계)** | **`.claude/skills/data-jobs-spec/SKILL.md`** (`docs/DATA-JOBS.md` 작성 표준 · 요구사항만 쓰고 구현 계약은 쓰지 않음) |
 | 처음 클론·환경 설정·실행                           | `docs/guides/getting-started.md` |
 | 의존성 추가·교체, 기술 스택, 날짜/시간 처리        | `docs/guides/tech-stack.md`      |
 | 컴포넌트·라우트·Supabase 클라이언트·테마·경로 별칭 | `docs/guides/architecture.md`    |
@@ -60,6 +61,7 @@ npm run db:studio    # Drizzle Studio (DB GUI)
 - `docs/archive/` — 보관 문서 (이전 버전 PRD·로드맵 등)
 - `docs/workflow/` — (옵션) 기능 개발 워크플로우 문서
 - 요구사항·기획 문서(PRD·ROADMAP 등)는 `docs/` 루트에 추가하고, 폐기 시 `docs/archive/`로 이동
+- `docs/DATA-JOBS.md` — (수집 요구가 있을 때만) 크롤링·외부 API 잡 **요구사항 인계 문서**. 정본은 이 저장소가 소유하고, 모노레포 `wisdfire/jobhub-jobs`가 읽어 구현한다
 
 ## 이 스타터킷의 사용 흐름
 
@@ -77,11 +79,19 @@ npm run db:studio    # Drizzle Studio (DB GUI)
 | 하네스 | 목표 | 트리거 → 사용할 오케스트레이터 스킬 |
 | ------ | ---- | ----------------------------------- |
 | 풀스택 웹 개발 | 와이어프레임→디자인→프론트→백엔드→**애드센스 게이트**→QA(링크 경로 검증)를 파이프라인으로 조율 | 웹사이트/화면/풀스택 개발 요청 시 → `fullstack-web-orchestrator` |
-| 리서치→PRD/ROADMAP | 웹·학술·커뮤니티 교차검증 → PRD.md(**애드센스 100% 통과 필수**·유지보수 최소·Lighthouse 지표)·ROADMAP.md 생성 | PRD/요구사항 정의/로드맵/시장조사 요청 시 → `research-to-spec-orchestrator` |
+| 리서치→PRD/ROADMAP/DATA-JOBS | 웹·학술·커뮤니티 교차검증 → PRD.md(**애드센스 100% 통과 필수**·유지보수 최소·Lighthouse 지표)·**DATA-JOBS.md(수집 요구 시 모노레포 인계 문서)**·ROADMAP.md 생성 | PRD/요구사항 정의/로드맵/시장조사/수집 요구사항 정리 요청 시 → `research-to-spec-orchestrator` |
+
+### PRD 작성의 시작점 · 산출물
+
+- **시드**: 이 프로젝트의 PRD는 보통 **`../auto-prd-vault/03_PRD_Docs/PRD-*.md`** 에서 파생된다. 시드는 **검증 대상 가설**로만 취급하고(그대로 복사 금지), 리서치·기술검증을 거쳐 이 저장소의 `docs/PRD.md`·`docs/ROADMAP.md`로 새로 쓴다.
+- **수집 요구가 있으면 `docs/DATA-JOBS.md`를 반드시 만든다**: 크롤링·외부 API 주기 호출·배치 갱신 요구가 PRD에 하나라도 있으면, 그 **요구사항**(무슨 데이터·왜·주기·필드·신선도·유일성·적재 스키마·웹앱이 더할 편집 부가가치)을 별도 문서로 분리해 **모노레포 `wisdfire/jobhub-jobs`가 읽어 구현**하게 한다 (`data-jobs-spec` 스킬 · `data-jobs-spec-author` 에이전트).
+  - ⚠️ 이 문서에 **구현 계약(`run()`·이미지 slim/browser·`jobs.yml` 크론 표현식·`on_conflict`)은 쓰지 않는다** — 모노레포가 결정한다. PRD·ROADMAP은 이 문서를 **링크·외부 의존성으로만 참조**하고 내용을 복제하지 않는다(복제 = drift).
 
 > **🚫 Python 백엔드(크롤링·REST API·크론잡)는 이 저장소의 범위가 아니다.** 크롤링/스크래핑 워커, Python REST API, 배치·크론잡 등은 **별도 모노레포 [`wisdfire/jobhub-jobs`](https://github.com/wisdfire/jobhub-jobs)** 가 소유한다. 이 스타터킷은 **Next.js 웹서비스 전용**이다.
 >
 > 이 저장소에서 크롤러·파이썬 배치·ETL·데이터 파이프라인 구현을 요청받으면, **직접 구현하지 말고 `jobhub-jobs` 모노레포 소관임을 알리고 그쪽에서 작업하도록 안내**하라. 웹앱은 수집 결과가 **Supabase에 이미 적재된 상태**로 도착한다고 가정하고 읽어서 렌더링하는 것까지만 담당한다 (경계 상세: `docs/guides/tech-stack.md`).
+>
+> **단, 요구사항은 이 저장소가 소유한다.** "무슨 데이터가 왜 필요한가"를 아는 쪽은 제품(PRD)이다. 수집 요구가 생기면 **`docs/DATA-JOBS.md`(인계 문서)** 를 만들어 모노레포가 읽고 구현하게 한다 — 요구사항은 여기, 구현은 거기.
 >
 > ⚠️ **제거됨(2026-07-14)**: 크롤링 워커 구현 하네스(`scraping-pipeline-build-orchestrator`·`crawl-worker-engineer`·`celery-crawl-worker`·`playwright-scraping`·`python-test-ci`·`supabase-upsert-load`·`opentofu-infra`)와 데이터 파이프라인 설계 하네스(`data-pipeline-design-orchestrator`·`pipeline-lead`·`schema-designer`·`etl-designer`·`validation-designer`·`monitoring-designer` + 스킬 4종). 재도입 요청이 오면 모노레포 이관 사실을 알려라.
 
@@ -104,3 +114,4 @@ npm run db:studio    # Drizzle Studio (DB GUI)
 | 2026-07-11 | **베이스 OS를 Ubuntu 24.04→26.04 LTS "Resolute Raccoon"으로 이동**: 베이스 이미지 `v1.61.0-noble`→**`v1.61.0-resolute`**(레지스트리에 `-arm64` 변형 실재 확인), CI 러너 `ubuntu-24.04-arm`→**`ubuntu-26.04-arm`**(현재 GitHub public preview — 문제 시 24.04로 임시 하향 가능). resolute는 **시스템 Python이 3.14**라, `uv python install 3.14`의 근거를 "내장 3.12 회피"→**"패치(3.14.6) uv.lock 고정으로 재현성 확보"**로 재구성하고 `UV_SYSTEM_PYTHON=1` 금지 사유·`파이썬 3.12로 되돌아감` 오류 문구를 전부 갱신. Python 3.14는 이전부터 확정 런타임이라 유지(CPython엔 LTS 등급 없음 — LTS는 OS인 Ubuntu 26.04). resolute 검증 조합·infra Dockerfile 방식은 인프라 `docs/03_cicd.md` §4-1로 재확인하도록 표기 | `celery-crawl-worker`·`crawl-worker-engineer`·`scraping-pipeline-build-orchestrator`·`python-test-ci`, `docs/guides/tech-stack.md`, CLAUDE.md | Python 3.14 LTS·Ubuntu 26 환경 반영 요청 |
 | 2026-07-14 | **크롤링·Python 백엔드를 모노레포 `wisdfire/jobhub-jobs`로 이관하고 하네스에서 제거** + **애드센스 심사 통과를 전 하네스의 타협 불가 게이트로 승격**. ①삭제: 에이전트 6종(`crawl-worker-engineer`·`pipeline-lead`·`schema-designer`·`etl-designer`·`validation-designer`·`monitoring-designer`), 스킬 11종(`scraping-pipeline-build-orchestrator`·`celery-crawl-worker`·`playwright-scraping`·`python-test-ci`·`supabase-upsert-load`·`opentofu-infra`·`data-pipeline-design-orchestrator`·`schema-design`·`etl-logic-design`·`data-validation-rules`·`pipeline-monitoring`) → 하네스 4개→**2개**(풀스택 웹·리서치→PRD). 검증 보고서는 `docs/archive/`로 보관 ②IaC(OpenTofu) 참조를 **배포 config-as-code(`vercel.ts`, `web-deploy-config`)** 로 대체 ③**애드센스**: `adsense-readiness` 스킬을 공식 문서 근거로 전면 재작성(**MUST 10항 / SHOULD 구분**, 출처 URL 병기)하고 CLAUDE.md 핵심 규칙·`verification.md` 커밋 전 게이트·풀스택 오케스트레이터 Phase 4.3 차단 게이트·design-architect/frontend-engineer/qa-inspector·prd-author/tech-verifier/roadmap-planner에 전파. **사실 정정**: 공식 필수 페이지는 **개인정보처리방침 1종뿐**(About·Contact·Terms는 관행), 누락돼 있던 진짜 MUST(**인증 CMP(IAB TCF)**·**HTTPS**·**`Mediapartners-Google` 차단 금지**·개인정보처리방침 구글 지정 문구) 추가, 근거 없는 "80%+·최소 분량" 기준 제거(구글은 최소 분량·통과 보장을 명시하지 않음 → **"MUST 전항 충족 + 저가치 콘텐츠 리스크 제거"** 라는 검증 가능한 게이트로 재정의) | 전체 하네스, `docs/guides/tech-stack.md`·`verification.md`, CLAUDE.md | 크롤링 업무의 모노레포 이관 + 애드센스 심사 통과 필수화 요청 |
 | 2026-07-11 | **3자 검증(템플릿 vs `crawling-node-infra` vs 실워커 `slashnow`) 후 정렬**: ①베이스 이미지를 **`v1.61.0-noble`로 회귀**(인프라 §4-1·실워커 모두 noble — resolute는 미검증, 전환은 인프라 갱신 후에만. CI 러너 `ubuntu-26.04-arm`은 실워커 검증돼 유지) ②**다중 워커 규약 반영**: 컨테이너명 `worker-<워커키>`(Alloy 정적 타깃), 배포 슬롯 `/opt/crawling-worker-<워커키>`, ECR `<project>-<env>-<워커키>`, GitHub Variables 3종→**5종**(`+DEPLOY_DIR`·`SSM_PARAM_PATH`, `tofu output worker_deploy_values`), preflight 잡, **기본 `celery` 큐 공유 시 다중 워커 상호 오소비 경고** ③ScrapeGraphAI `>=3.12`→**`==2.1.5` pin**(3.x는 3.14 미지원) ④Beat 별도 서비스 규격(192M·30s·볼륨)·`shm_size: 256mb` 병행·히스토그램 버킷 0.5~300·모노레포 `paths:` 필터 필수·`allow_reuse_port`·비밀값 SSM 렌더 반영 ⑤오케스트레이터 잔재 오류 수정("에이전트당 전용 큐"·"multiprocess 계측"·`bull:*` 문구) | `celery-crawl-worker`·`crawl-worker-engineer`·`scraping-pipeline-build-orchestrator`, `docs/guides/tech-stack.md`, CLAUDE.md | 인프라·실워커 저장소와 템플릿 비교 검증 요청 |
+| 2026-07-14 | **PRD 파생 경로와 수집 요구사항 인계 경로를 하네스에 명문화**. ①**시드 PRD 입력**: research-to-spec Phase 0이 `../auto-prd-vault/03_PRD_Docs/PRD-*.md`를 시드로 로드(`_workspace/00_seed_prd.md` 보존)하되 **검증 대상 가설로만 취급**(그대로 복사 금지 — 리서치·기술검증으로 재작성) ②**Phase 4.5 신설(조건부)**: PRD에 주기적 크롤링·외부 API 호출·배치 갱신 요구가 하나라도 있으면 신규 에이전트 **`data-jobs-spec-author`** 가 신규 스킬 **`data-jobs-spec`** 기준으로 **`docs/DATA-JOBS.md`**(모노레포 `wisdfire/jobhub-jobs` 인계 문서)를 생성. 수집 요구가 없으면 문서를 만들지 않는다(빈 문서 금지) ③**경계 규칙**: 인계 문서에는 **요구사항만**(무슨 데이터·왜·주기·필드·신선도·유일성 정의·적재 스키마 제안·웹앱의 편집 부가가치) 쓰고 **구현 계약(`run()`·이미지 slim/browser·`jobs.yml` 크론 표현식·`on_conflict`)은 쓰지 않는다** — 모노레포 결정권 침범 금지. PRD·ROADMAP은 링크·외부 의존성으로만 참조(내용 복제 = drift) ④tech-verifier에 **저장소 경계 검증 + 수집 소스 실재성 검증**(존재하지 않는 API 엔드포인트 전제 = Blocker) 추가, roadmap-planner는 수집 적재를 기다리지 않도록 **픽스처/시드 데이터 기반 검증 기준** 규약 추가 | `research-to-spec-orchestrator`·`prd-authoring`·`roadmap-planning`·**`data-jobs-spec`(신규)**, `prd-author`·`tech-verifier`·`roadmap-planner`·**`data-jobs-spec-author`(신규)**, `docs/guides/tech-stack.md`, CLAUDE.md | PRD가 auto-prd-vault에서 파생되고, 수집 요구는 jobhub-jobs 모노레포가 참조할 별도 문서로 분리하도록 하네스 갱신 요청 |

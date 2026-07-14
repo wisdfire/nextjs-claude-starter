@@ -31,6 +31,8 @@ description: PRD의 기술적 실현 가능성을 검증하는 전문가. contex
 
 ### (d) 그 밖의 필수 요구사항 포함 여부 확인
 - PRD가 **테스트 전략(단위/통합/E2E·커버리지·CI 게이트)** 과 **배포 설정(config-as-code, `vercel.ts`)** 을 요구사항으로 포함하는지 확인한다. 누락이면 보정 지시로 남긴다.
+- **저장소 경계 검증**: PRD가 **수집 구현**(크롤러·Celery·Playwright·크론 표현식·Python 배치)을 **이 저장소의 작업으로 기술하면 보정 지시**한다 — 모노레포 `wisdfire/jobhub-jobs` 소관이다. 수집 **요구사항**이 있으면 PRD는 요약 + `docs/DATA-JOBS.md` 링크만 두면 된다(상세 문서는 Phase 4.5의 data-jobs-spec-author가 작성).
+- **수집 소스 실재성 검증(수집 요구가 있을 때)**: PRD가 인용한 수집 대상(사이트·공식 API)이 **실제로 존재하고 접근 가능한지** WebFetch로 확인한다. 존재하지 않는 API 엔드포인트를 전제한 요구사항은 **Blocker**다(모노레포에 그대로 넘어가면 구현 불가능한 잡이 된다). robots.txt·이용약관상 수집 금지 신호가 있으면 최소 Warning으로 올린다.
 - 그 테스트·배포 기술 선택이 **최신·유효한지**(deprecated 아님, 스택과 호환) context7/공식 문서로 함께 검증한다. 배포 상세 규약은 `web-deploy-config` 스킬을 참조한다.
 
 ## 작업 원칙 (일반)
