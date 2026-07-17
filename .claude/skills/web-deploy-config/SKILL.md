@@ -61,7 +61,9 @@ export const config: VercelConfig = {
 
 - **관리 주체는 `vercel env`**: 환경변수는 Vercel에 저장하고 CLI(`vercel env add/ls/rm`, 로컬 동기화는 `vercel env pull`)로 다룬다. `.env`/`.env.local`은 **커밋하지 않는다**(비밀 노출 방지). 이 프로젝트도 `.env.example`만 커밋하고 `.env.local`은 개인 로컬용이다.
 - **`NEXT_PUBLIC_*`와 서버 전용을 구분**한다:
-  - `NEXT_PUBLIC_*`는 **브라우저 번들에 그대로 노출**된다 → 공개해도 되는 값(예: Supabase anon key, 공개 URL)만.
+  - `NEXT_PUBLIC_*`는 **브라우저 번들에 그대로 노출**된다 → 공개해도 되는 값(예: 공개 URL, 광고 게시자 ID)만.
+  - ⚠️ **`DATABASE_URL`·`DIRECT_URL`에 절대 `NEXT_PUBLIC_`을 붙이지 않는다** — 연결 문자열에는 비밀번호가 들어 있다.
+  - ⚠️ **`DIRECT_URL`은 배포 환경에 등록하지 않는다** — drizzle-kit 전용이고 로컬에서만 쓴다.
   - 서버 전용 변수(서비스 롤 키, DB 비밀번호 등)는 접두사 없이 두고 **서버 코드에서만** 읽는다. 절대 `NEXT_PUBLIC_`을 붙이지 않는다.
 - 환경 스코프(Production/Preview/Development)를 구분해 등록한다. 프리뷰와 프로덕션이 다른 키를 쓸 수 있다.
 

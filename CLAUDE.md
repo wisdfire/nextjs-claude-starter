@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**프로젝트**: Next.js Starter Kit (`next-js-starter-kit`) — GitHub에서 클론한 뒤 요구사항 문서를 넣어 곧바로 개발을 시작하기 위한 Next.js 웹서비스 스타터킷. Next.js 16 · Tailwind v4 · shadcn/ui(base-nova) · Supabase · Vitest 기반.
+**프로젝트**: Next.js Starter Kit (`next-js-starter-kit`) — GitHub에서 클론한 뒤 요구사항 문서를 넣어 곧바로 개발을 시작하기 위한 Next.js 웹서비스 스타터킷. Next.js 16 · Tailwind v4 · shadcn/ui(base-nova) · Neon Postgres · Drizzle ORM · Vitest 기반.
 
 이 파일은 **얇은 색인(라우터)** 입니다. 항상 적용되는 핵심 규칙만 여기 두고, 상세 지침은 작업 종류에 따라 `docs/guides/`의 문서를 **그때그때 읽어서** 적용합니다.
 
@@ -51,7 +51,8 @@ npm run db:studio    # Drizzle Studio (DB GUI)
 | **크롤링·외부 API 수집 요구사항 문서화 (모노레포 인계)** | **`.claude/skills/data-jobs-spec/SKILL.md`** (`docs/DATA-JOBS.md` 작성 표준 · 요구사항만 쓰고 구현 계약은 쓰지 않음) |
 | 처음 클론·환경 설정·실행                           | `docs/guides/getting-started.md` |
 | 의존성 추가·교체, 기술 스택, 날짜/시간 처리        | `docs/guides/tech-stack.md`      |
-| 컴포넌트·라우트·Supabase 클라이언트·테마·경로 별칭 | `docs/guides/architecture.md`    |
+| 컴포넌트·라우트·DB 접근(Drizzle)·테마·경로 별칭    | `docs/guides/architecture.md`    |
+| 배포 시 스키마 반영·마이그레이션 절차              | `docs/guides/db-operations.md`   |
 | UI·컴포넌트 구현, 코드 작성 (도구·라이브러리 규칙) | `docs/guides/coding.md`          |
 | 태스크 완료·검증·커밋 직전                         | `docs/guides/verification.md`    |
 
@@ -65,7 +66,7 @@ npm run db:studio    # Drizzle Studio (DB GUI)
 
 ## 이 스타터킷의 사용 흐름
 
-1. 클론 → `npm install` → `.env.example`을 `.env.local`로 복사해 Supabase 키 입력
+1. 클론 → `npm install` → `.env.example`을 `.env.local`로 복사해 Neon 연결 문자열(`DATABASE_URL`·`DIRECT_URL`) 입력
 2. 요구사항 문서를 `docs/`에 추가
 3. `app/page.tsx`(랜딩)를 실제 화면으로 교체하며 개발 시작
 4. 위 "문서 색인"에 따라 작업별 가이드를 먼저 읽고 진행
@@ -89,7 +90,7 @@ npm run db:studio    # Drizzle Studio (DB GUI)
 
 > **🚫 Python 백엔드(크롤링·REST API·크론잡)는 이 저장소의 범위가 아니다.** 크롤링/스크래핑 워커, Python REST API, 배치·크론잡 등은 **별도 모노레포 [`wisdfire/jobhub-jobs`](https://github.com/wisdfire/jobhub-jobs)** 가 소유한다. 이 스타터킷은 **Next.js 웹서비스 전용**이다.
 >
-> 이 저장소에서 크롤러·파이썬 배치·ETL·데이터 파이프라인 구현을 요청받으면, **직접 구현하지 말고 `jobhub-jobs` 모노레포 소관임을 알리고 그쪽에서 작업하도록 안내**하라. 웹앱은 수집 결과가 **Supabase에 이미 적재된 상태**로 도착한다고 가정하고 읽어서 렌더링하는 것까지만 담당한다 (경계 상세: `docs/guides/tech-stack.md`).
+> 이 저장소에서 크롤러·파이썬 배치·ETL·데이터 파이프라인 구현을 요청받으면, **직접 구현하지 말고 `jobhub-jobs` 모노레포 소관임을 알리고 그쪽에서 작업하도록 안내**하라. 웹앱은 수집 결과가 **Neon Postgres에 이미 적재된 상태**로 도착한다고 가정하고 읽어서 렌더링하는 것까지만 담당한다 (경계 상세: `docs/guides/tech-stack.md`).
 >
 > **단, 요구사항은 이 저장소가 소유한다.** "무슨 데이터가 왜 필요한가"를 아는 쪽은 제품(PRD)이다. 수집 요구가 생기면 **`docs/DATA-JOBS.md`(인계 문서)** 를 만들어 모노레포가 읽고 구현하게 한다 — 요구사항은 여기, 구현은 거기.
 >

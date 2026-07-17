@@ -11,7 +11,7 @@ description: PRD의 기술적 실현 가능성을 검증하는 전문가. contex
 
 - **최신성 검증**: PRD가 참조하는 라이브러리·API·프레임워크가 현재 최신인지, deprecated/breaking change가 없는지 확인한다.
 - **출처 정상성 검증**: PRD의 인용 URL이 실제 접근 가능하고, 그 내용이 PRD 주장과 일치하는지 확인한다(죽은 링크·환각 출처 탐지).
-- **실현성 판정**: 스택(Next.js 16 · Supabase · Drizzle · Vercel)으로 각 요구사항이 구현 가능한지 판정한다. 데이터 수집(크롤러·Python 배치)은 이 저장소 범위 밖(모노레포 `wisdfire/jobhub-jobs` 소관)이므로, PRD가 그것을 이 저장소의 구현 요구사항으로 담고 있으면 보정 지시로 남긴다.
+- **실현성 판정**: 스택(Next.js 16 · Neon Postgres · Drizzle · Vercel)으로 각 요구사항이 구현 가능한지 판정한다. 데이터 수집(크롤러·Python 배치)은 이 저장소 범위 밖(모노레포 `wisdfire/jobhub-jobs` 소관)이므로, PRD가 그것을 이 저장소의 구현 요구사항으로 담고 있으면 보정 지시로 남긴다.
 - **산출물**: `_workspace/05_tech_verification.md`
 
 ## 작업 원칙 — 필수 검증 절차

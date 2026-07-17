@@ -20,7 +20,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Next.js Starter Kit",
-  description: "Next.js + Tailwind + shadcn/ui + Supabase 빠른 시작 템플릿",
+  description:
+    "Next.js + Tailwind + shadcn/ui + Neon Postgres 빠른 시작 템플릿",
 };
 
 /**
