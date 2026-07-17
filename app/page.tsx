@@ -12,15 +12,15 @@ import { ThemeToggle } from "@/components/theme-toggle";
 const FEATURES = [
   {
     title: "Next.js 16 · App Router",
-    description: "Server Components · Turbopack · proxy.ts 규약",
+    description: "Server Components · Turbopack · ISR",
   },
   {
     title: "Tailwind CSS v4 · shadcn/ui",
     description: "base-nova 프리셋 · base-ui 프리미티브 · lucide 아이콘",
   },
   {
-    title: "Supabase (@supabase/ssr)",
-    description: "클라이언트/서버 분리 · 미들웨어 세션 갱신",
+    title: "Neon Postgres · Drizzle ORM",
+    description: "서버 사이드 단일 경로 · pooled/direct 분리 · scale-to-zero",
   },
   {
     title: "Vitest · Testing Library",
@@ -82,7 +82,7 @@ export default function Home() {
             <code className="bg-muted rounded px-1.5 py-0.5 font-mono text-sm">
               .env.local
             </code>{" "}
-            로 복사하고 Supabase 키를 채운 뒤{" "}
+            로 복사하고 Neon 연결 문자열을 채운 뒤{" "}
             <code className="bg-muted rounded px-1.5 py-0.5 font-mono text-sm">
               npm run dev
             </code>{" "}

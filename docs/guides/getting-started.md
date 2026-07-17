@@ -12,42 +12,61 @@ npm install
 
 > `.npmrc`에 `legacy-peer-deps=true`가 설정되어 있어 별도 플래그 없이 설치된다. (이유는 `docs/guides/tech-stack.md`의 "패키지 매니저 주의" 참고)
 
-## 2. 환경 변수 설정
+## 2. Neon 프로젝트 생성
+
+[Neon 콘솔](https://console.neon.tech)에서 프로젝트를 만든다.
+
+- 리전: 아시아는 **싱가포르**(`aws-ap-southeast-1`)가 가장 가깝다 (서울·도쿄 없음).
+- 생성 직후 `neondb` 데이터베이스가 함께 만들어진다.
+
+## 3. 환경 변수 설정
 
 ```bash
 cp .env.example .env.local
 ```
 
-`.env.local`을 열어 Supabase 프로젝트 값을 채운다. (Supabase 대시보드 > Project Settings > API)
+`.env.local`을 열어 **연결 문자열 2종**을 채운다. 호스트명의 `-pooler` 유무가 유일한 차이이고, 용도가 다르다.
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+| 변수           | 호스트         | 용도                                        | 배포 환경 등록   |
+| -------------- | -------------- | ------------------------------------------- | ---------------- |
+| `DATABASE_URL` | `-pooler` 있음 | 앱 런타임·빌드                              | ✅ 등록          |
+| `DIRECT_URL`   | `-pooler` 없음 | `drizzle-kit`(generate/migrate/push/studio) | ❌ **로컬 전용** |
 
-데이터베이스(Drizzle ORM)를 쓴다면 연결 문자열도 채운다. (Supabase 대시보드 > Project Settings > Database > Connection string)
+Neon CLI로 발급하거나, 콘솔 > Project > **Connection Details**에서 복사한다.
 
-- `DATABASE_URL` — 서버리스 환경에서는 **Transaction pooler**(포트 6543) 문자열을 권장한다. `[YOUR-PASSWORD]` 자리에 DB 비밀번호를 넣고, 비밀번호의 특수문자는 URL 인코딩한다.
+```bash
+neon connection-string --project-id <PROJECT_ID> --pooled   # → DATABASE_URL
+neon connection-string --project-id <PROJECT_ID>            # → DIRECT_URL
+```
 
-> Supabase를 당장 쓰지 않는다면 값을 비워둬도 개발 서버는 뜬다. 다만 Supabase / DB 호출 코드는 런타임에 실패한다.
+> ⚠️ **출력을 그대로 붙여넣는다. 손으로 조립하지 말 것** — 호스트에 `.c-N.` 세그먼트가 들어가고 `channel_binding=require`가 붙는다.
 
-## 3. 데이터베이스 준비 (Drizzle ORM — 선택)
+- `NEXT_PUBLIC_SITE_URL` — 서비스 정식 도메인 (metadata의 `metadataBase` 기준). 비워두면 `http://localhost:3000`으로 폴백한다.
+
+> DB를 당장 쓰지 않는다면 값을 비워둬도 개발 서버는 뜬다. 다만 DB 호출 코드는 런타임에 실패한다.
+
+## 4. 데이터베이스 준비 (Drizzle ORM — 선택)
 
 DB 테이블이 필요할 때만 진행한다. 자세한 구조는 `docs/guides/architecture.md`의 "데이터 접근 규칙", 스택 설명은 `docs/guides/tech-stack.md`를 참고한다.
 
-1. 위 2단계에서 `DATABASE_URL`을 채운다.
+1. 위 3단계에서 `DATABASE_URL`·`DIRECT_URL`을 채운다.
 2. `lib/db/schema.ts`에 테이블을 정의한다. (초기엔 플레이스홀더 `example` 테이블이 들어 있다.)
-3. 스키마를 마이그레이션 SQL로 변환하고 DB에 적용한다.
+3. 스키마를 DB에 반영한다.
 
 ```bash
-npm run db:generate   # lib/db/schema.ts → drizzle/ 에 마이그레이션 SQL 생성
-npm run db:migrate    # 생성된 마이그레이션을 DB에 적용
-# npm run db:push     # (개발용) 마이그레이션 없이 스키마를 DB에 즉시 반영
+npm run db:push       # 스키마를 DB에 즉시 반영 — 로컬 프로토타이핑 전용
 # npm run db:studio   # Drizzle Studio (브라우저 DB GUI)
 ```
 
-> 쿼리는 서버에서만 `import { db } from "@/lib/db"`로 사용한다. (클라이언트 컴포넌트 import 금지)
-> Drizzle 직접 연결은 Supabase RLS의 보호를 받지 않을 수 있으니 권한 검증은 애플리케이션에서 직접 처리한다.
+> ⚠️ **`db:push`는 첫 배포 전까지만 쓴다.** 배포 이후로는 `db:push` 대신
+> `npm run db:generate`(마이그레이션 SQL 생성) → 리뷰 → `npm run db:migrate`(적용) 경로만 쓴다 —
+> `db:push`는 이력을 남기지 않아 "지금 DB가 어떤 상태인지"를 코드에서 알 수 없게 만든다.
+> 배포 시 스키마 반영 절차는 **[`docs/guides/db-operations.md`](./db-operations.md)** 를 따른다.
 
-## 4. 개발 서버 실행
+> 쿼리는 서버에서만 `import { db } from "@/lib/db"`로 사용한다. (클라이언트 컴포넌트 import 금지)
+> DB에는 행 수준 보안(RLS) 같은 계층이 없다 — **"무엇을 공개할지"는 쿼리의 `where` 절이 책임진다.**
+
+## 5. 개발 서버 실행
 
 ```bash
 npm run dev
@@ -55,7 +74,7 @@ npm run dev
 
 http://localhost:3000 에서 스타터킷 랜딩 페이지를 확인한다.
 
-## 5. 요구사항 넣고 개발 시작
+## 6. 요구사항 넣고 개발 시작
 
 이 스타터킷의 목적은 **클론 후 요구사항 문서를 넣고 바로 개발을 시작**하는 것이다.
 
@@ -68,7 +87,7 @@ http://localhost:3000 에서 스타터킷 랜딩 페이지를 확인한다.
 
 이 저장소는 `.claude/settings.json`에 **프로젝트 권장 플러그인 세트와 마켓플레이스**를 명시해 두었다. Claude Code로 이 프로젝트를 열면, 사용자(전역) 설정에 해당 플러그인이 없어도 프로젝트 설정 기준으로 활성화/설치가 안내된다.
 
-- 포함 플러그인(**Anthropic 공식** `claude-plugins-official`): `vercel`, `supabase`, `playwright`, `frontend-design`, `typescript-lsp`, `code-review`, `code-simplifier`, `commit-commands`, `claude-md-management`, `security-guidance`
+- 포함 플러그인(**Anthropic 공식** `claude-plugins-official`): `vercel`, `playwright`, `frontend-design`, `typescript-lsp`, `code-review`, `code-simplifier`, `commit-commands`, `claude-md-management`, `security-guidance`
 - 포함 플러그인(**서드파티 — 보안 예외 승인**): `ui-ux-pro-max`(UI/UX 디자인 인텔리전스, `ui-ux-pro-max-skill` 마켓플레이스)
 - 마켓플레이스: `claude-plugins-official`(anthropics/claude-plugins-official), `ui-ux-pro-max-skill`(nextlevelbuilder/ui-ux-pro-max-skill)
 - 플러그인 추가/제거는 Claude Code에서 `/plugin` 명령으로 관리한다.

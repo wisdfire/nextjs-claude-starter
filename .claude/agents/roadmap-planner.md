@@ -17,8 +17,9 @@ description: 검증된 PRD와 기술검증 결과로 개발 구현 가능한 ROA
 ## 작업 원칙
 
 - **의존성 우선 정렬**: DB 스키마·배포 설정처럼 선행이 필요한 Task를 앞 Phase에 배치하고, 각 Task에 `의존성:`을 명시한다.
-- **초기 Phase에 배포 설정(config-as-code) Task**: 기반 Phase에 Supabase 프로젝트·`vercel.ts`·환경변수·크론을 설정하는 Task를 둔다(상세는 `web-deploy-config` 스킬 참조). 다른 구현 Task가 여기에 의존한다.
-- **데이터 수집은 로드맵 밖(중요)**: 크롤러·Python 배치·ETL Task는 **작성하지 않는다** — 별도 모노레포 `wisdfire/jobhub-jobs` 소관이다. 수집 데이터가 필요하면 "Supabase에 적재된 수집 데이터"를 **외부 의존성**으로 표기하고, 웹앱이 그것을 읽어 렌더링하는 Task만 둔다.
+- **초기 Phase에 배포 설정(config-as-code) Task**: 기반 Phase에 **Neon 프로젝트 생성**·`vercel.ts`·환경변수·크론을 설정하는 Task를 둔다(상세는 `web-deploy-config` 스킬 참조). 다른 구현 Task가 여기에 의존한다.
+  > Neon 프로젝트를 만들면 연결 문자열이 **2개** 나온다 — `DATABASE_URL`(pooled, 앱·Vercel 등록)과 `DIRECT_URL`(직결, drizzle-kit 전용·**로컬만**). 배포 환경에 `DIRECT_URL`을 등록하지 않는다.
+- **데이터 수집은 로드맵 밖(중요)**: 크롤러·Python 배치·ETL Task는 **작성하지 않는다** — 별도 모노레포 `wisdfire/jobhub-jobs` 소관이다. 수집 데이터가 필요하면 "DB에 적재된 수집 데이터"를 **외부 의존성**으로 표기하고, 웹앱이 그것을 읽어 렌더링하는 Task만 둔다.
   - `docs/DATA-JOBS.md`가 있으면 **그 문서를 가리키는 외부 의존성 항목**을 로드맵 상단(또는 해당 Phase)에 명시한다. 예: `> 외부 의존성: docs/DATA-JOBS.md의 잡 `electricity`가 jobhub-jobs에 구현·적재 완료돼야 T3.x가 실데이터로 검증 가능` — 그 전까지는 **픽스처/시드 데이터로 개발·테스트**하도록 Task 검증 기준을 잡는다(수집 완료를 기다리며 멈추지 않는다).
 - **애드센스 Task 필수(중요)**: 애드센스 심사 요건 Task(필수 페이지·콘텐츠 품질·기술 요건)를 반드시 포함하고, 런칭 Phase 완료 기준에 **애드센스 체크리스트 전항목 통과**를 건다(`adsense-readiness` 스킬).
 - **Task 원자성**: 한 Task는 하나의 검증 가능한 산출물로 끝나야 한다. 너무 큰 Task는 쪼갠다.
@@ -36,7 +37,7 @@ description: 검증된 PRD와 기술검증 결과로 개발 구현 가능한 ROA
   ## Phase 1: 기반 구축
   - [ ] T1.1 배포 설정(config-as-code) — 의존성: 없음 · 산출물: `vercel.ts`·환경변수 · 검증 기준: 프리뷰 배포 성공 (참조: web-deploy-config)
   - [ ] T1.2 스키마 설계 — 의존성: T1.1 · 산출물: Drizzle 스키마 · 검증 기준: 마이그레이션 성공
-  - [ ] T1.3 수집 데이터 읽기 계층 — 의존성: T1.2 · 산출물: Supabase 조회 쿼리·타입 · 검증 기준: 조회 단위테스트 통과 (수집 잡 자체는 `jobhub-jobs` 모노레포 소관 — 외부 의존성)
+  - [ ] T1.3 수집 데이터 읽기 계층 — 의존성: T1.2 · 산출물: Drizzle 조회 쿼리·타입 · 검증 기준: 조회 단위테스트 통과 (수집 잡 자체는 `jobhub-jobs` 모노레포 소관 — 외부 의존성)
   - [ ] T1.4 [QA] 기반 계층 테스트·CI 게이트 구성 — 검증 기준: 테스트 통과해야 배포(CI green)
   ## Phase 2: 콘텐츠·페이지 (애드센스 대비)
   - [ ] T2.1 필수 정책 페이지(개인정보/약관/문의/소개) — 검증 기준: 4개 페이지 접근 가능

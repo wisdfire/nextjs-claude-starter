@@ -1,6 +1,6 @@
 # 아키텍처 가이드
 
-> 컴포넌트·라우트·Supabase 클라이언트·테마·경로 별칭 관련 작업 전에 이 문서를 확인할 것.
+> 컴포넌트·라우트·DB 접근(Drizzle)·테마·경로 별칭 관련 작업 전에 이 문서를 확인할 것.
 
 ## 디렉토리 구조
 
@@ -17,16 +17,11 @@
 │   └── __tests__/          # 컴포넌트 단위 테스트
 ├── lib/
 │   ├── utils.ts            # cn() 클래스 병합 헬퍼
-│   ├── supabase/
-│   │   ├── client.ts       # 브라우저용 Supabase 클라이언트
-│   │   ├── server.ts       # 서버용 Supabase 클라이언트
-│   │   └── middleware.ts   # updateSession() — 세션 갱신 헬퍼
-│   └── db/                 # Drizzle ORM (Postgres)
+│   └── db/                 # Drizzle ORM (Neon Postgres) — 유일한 DB 접근 경로
 │       ├── index.ts        # 서버 전용 db 클라이언트 (postgres-js)
 │       └── schema.ts       # 테이블 스키마 (pgTable)
-├── drizzle.config.ts       # drizzle-kit 설정 (generate/migrate/push/studio)
+├── drizzle.config.ts       # drizzle-kit 설정 (generate/migrate/push/studio) — DIRECT_URL 사용
 ├── drizzle/                # 생성된 마이그레이션 SQL (db:generate 시 생성)
-├── proxy.ts                # Next.js 16 미들웨어(구 middleware.ts) — 세션 갱신
 ├── tests/setup.ts          # Vitest 전역 셋업
 └── docs/                   # 프로젝트 문서 (이 디렉토리)
 ```
@@ -36,30 +31,19 @@
 - `@/*` → 프로젝트 루트. `tsconfig.json`과 `vitest.config.ts` 양쪽에 설정되어 있다.
   - 예: `import { cn } from "@/lib/utils"`
 
-## Supabase 클라이언트 선택 규칙
+## 데이터 접근 규칙 — 서버사이드 Drizzle 단일 경로
 
-| 실행 위치                                 | 사용할 클라이언트                                | 비고                          |
-| ----------------------------------------- | ------------------------------------------------ | ----------------------------- |
-| 클라이언트 컴포넌트(`"use client"`)       | `lib/supabase/client.ts`의 `createClient()`      | 동기 함수                     |
-| 서버 컴포넌트 · 라우트 핸들러 · 서버 액션 | `lib/supabase/server.ts`의 `createClient()`      | `await` 필요 (cookies 비동기) |
-| 미들웨어(proxy)                           | `lib/supabase/middleware.ts`의 `updateSession()` | 토큰 갱신 전용                |
+**DB로 가는 길은 `lib/db` 하나뿐이다.** 브라우저가 DB에 직접 붙는 경로는 없다.
 
-- **중요**: `server.ts`의 `createServerClient`와 `getUser()` 사이에 다른 비동기 로직을 끼워 넣지 말 것. 세션 갱신 타이밍이 어긋나 사용자가 무작위로 로그아웃될 수 있다.
-
-## 데이터 접근 규칙 (Supabase vs Drizzle)
-
-같은 Supabase Postgres를 두 경로로 다룬다. 목적에 따라 골라 쓴다.
-
-| 목적                                | 사용할 것                          | 비고                                 |
-| ----------------------------------- | ---------------------------------- | ------------------------------------ |
-| 인증·세션·로그인/로그아웃           | `lib/supabase/*`                   | RLS·쿠키 기반 세션은 Supabase가 담당 |
-| RLS·Storage·Realtime·Edge Functions | `lib/supabase/*`                   | Supabase 전용 기능                   |
-| 타입 안전한 테이블 CRUD·복잡한 쿼리 | `lib/db`의 `db` (Drizzle)          | **서버에서만** import                |
-| 스키마 정의·마이그레이션            | `lib/db/schema.ts` + `drizzle-kit` | `db:generate` → `db:migrate`         |
+| 목적                                | 사용할 것                          | 비고                         |
+| ----------------------------------- | ---------------------------------- | ---------------------------- |
+| 타입 안전한 테이블 CRUD·복잡한 쿼리 | `lib/db`의 `db` (Drizzle)          | **서버에서만** import        |
+| 스키마 정의·마이그레이션            | `lib/db/schema.ts` + `drizzle-kit` | `db:generate` → `db:migrate` |
 
 - **Drizzle `db`는 서버 전용**이다. 서버 컴포넌트·라우트 핸들러·서버 액션에서만 `import { db } from "@/lib/db"`. 클라이언트 컴포넌트에서 import 금지(DB 자격증명·드라이버가 번들에 들어가면 안 됨).
-- Drizzle로 직접 쿼리하면 Supabase RLS의 보호를 받지 않는 연결(`postgres` 역할)을 쓸 수 있으니, 권한 검증은 애플리케이션 레벨에서 직접 처리한다.
-- 마이그레이션 워크플로우: `lib/db/schema.ts` 수정 → `npm run db:generate`(SQL 생성) → 검토 → `npm run db:migrate`(적용). 빠른 프로토타이핑은 `npm run db:push`.
+- 공개 데이터는 서버에서 읽어 **ISR로 내보낸다.** 클라이언트에 DB 자격증명을 내보내는 경로를 새로 만들지 않는다.
+- ⚠️ **"무엇을 공개할지"는 쿼리의 `where` 절이 책임진다.** DB에 그것을 걸러 줄 계층(RLS 등)이 없으므로, 공개 조건(예: `published = true`)을 빠뜨리면 미공개 데이터가 그대로 나간다. 권한 검증은 애플리케이션 레벨에서 직접 처리한다. (배경: `docs/guides/tech-stack.md`)
+- 마이그레이션 워크플로우: `lib/db/schema.ts` 수정 → `npm run db:generate`(SQL 생성) → 검토 → `npm run db:migrate`(적용). `npm run db:push`는 **로컬 프로토타이핑 전용**이다 — 배포 시 스키마 반영 절차는 `docs/guides/db-operations.md`를 따른다.
 
 ## 테마(다크모드)
 
