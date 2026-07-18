@@ -95,9 +95,46 @@ export const revalidate = 3600;
   - `date-fns-tz`: 타임존 변환 시 `toZonedTime`, `formatInTimeZone` 사용
   - 로케일: `import { ko } from "date-fns/locale"` — 한국어 포맷팅 시 사용
 
-## 국제화(i18n) — 옵션
+## 국제화(i18n) — **기본 탑재 (옵션 아님)**
 
-- **next-intl** 패키지가 설치되어 있으나 기본 라우팅에는 연결되어 있지 않다(의존성만 있다). 다국어가 필요하면 `i18n/routing.ts`를 만들고 **루트에 `proxy.ts`를 새로 만들어** next-intl 미들웨어를 넣는다 — 템플릿에는 `proxy.ts`가 없다 (자세한 내용은 next-intl 공식 문서 / Context7 참고).
+> **규칙의 단일 진실 공급원은 `.claude/skills/i18n-localization/SKILL.md`다.** 여기에는 스택 사실만 적는다.
+
+- **next-intl 4.x**가 설치되어 있고 **라우팅까지 연결돼 있다**. 이 스타터킷의 웹서비스는 **한국어를 기준 언어**로 하고 **영어를 추가 지원**한다.
+- URL 전략은 `localePrefix: "as-needed"` — 한국어는 접두사 없음(`/about`), 영어는 `/en/about`.
+- 배선된 파일(새로 만들지 말 것):
+
+  | 파일 | 역할 |
+  | ---- | ---- |
+  | `i18n/routing.ts` | 로케일 목록·기본값·URL 전략 (SSOT) |
+  | `i18n/navigation.ts` | 로케일 인식 `Link`·`useRouter`·`usePathname`·`redirect`·`getPathname` |
+  | `i18n/request.ts` | 요청별 로케일 판별 + `messages` 로드 |
+  | `proxy.ts` | 로케일 라우팅 미들웨어 (Next.js 16은 `middleware.ts`가 아니라 `proxy.ts`) |
+  | `next.config.ts` | `createNextIntlPlugin()` 래핑 |
+  | `messages/ko.json`·`messages/en.json` | 번역 메시지 |
+  | `components/locale-switcher.tsx` | 언어 선택 드롭다운 (재사용) |
+  | `app/[locale]/layout.tsx` | 루트 레이아웃 (`lang`·hreflang·`NextIntlClientProvider`) |
+  | `tests/messages.test.ts` | 번역 키 정합성 회귀 테스트 |
+
+- **핵심 주의 2가지**: ①모든 페이지는 `app/[locale]/` 아래에 두고 `setRequestLocale`을 호출한다 ②링크·이동은 `next/link`가 아니라 **`@/i18n/navigation`**을 쓴다(안 그러면 영어 화면에서 404).
+- 언어 추가 시에는 `i18n/routing.ts`의 `locales`·`LOCALE_LABELS`와 `messages/<locale>.json`만 건드린다.
+- 절대 URL 메타데이터(hreflang·canonical·OG)를 위해 `.env.local`의 `NEXT_PUBLIC_SITE_URL`을 채운다(미설정 시 `http://localhost:3000` 폴백).
+
+### 번역 생산 — ko는 사람이, en은 LLM이
+
+`messages/ko.json`이 원본(SSOT)이고 `messages/en.json`은 **Claude Code 헤드리스 호출로 생성**된다. 사람이 두 파일을 수기로 맞추면 반드시 어긋나기 때문이다.
+
+```bash
+npm run i18n:check       # 누락·낡음·잉여·ICU 파손 검사 (LLM 호출 없음)
+npm run i18n:translate   # 바뀐 키만 번역
+node scripts/i18n/translate.mjs --adopt    # 손으로 고친 번역을 확정
+node scripts/i18n/translate.mjs --all      # 전체 재번역
+```
+
+- **커밋 훅 자동 실행**: `.githooks/pre-commit`이 `messages/ko.json`이 스테이징된 커밋을 감지해 번역·검증 후 `en.json`을 함께 스테이징한다. `npm install`의 `prepare`가 `core.hooksPath`를 `.githooks`로 지정하며 활성화된다.
+- **바뀐 것만 번역**: `messages/.translations.lock.json`이 번역 시점의 ko 값 지문을 갖고 있어, ko가 바뀐 키만 다시 번역한다(비용·diff 최소화). 이 파일은 직접 수정하지 않는다.
+- **LLM 출력을 기계 검증**: 플레이스홀더 누락·**영어 복수형 `one` 카테고리 누락**·리치 태그 소실·빈 값을 잡아 커밋을 중단시킨다. LLM이 실제로 자주 내는 실수라 장식이 아니다.
+- **모델 변경**: `I18N_TRANSLATE_MODEL=opus npm run i18n:translate` (기본 `sonnet`, 호출당 약 $0.15).
+- ⚠️ **DB·사용자 입력·수집 콘텐츠는 번역 대상이 아니다** — 검토 없는 대량 기계번역은 애드센스 거절 사유다. 상태·카테고리 같은 열거값은 코드에 키로 정의해 번역하고 DB에는 키만 저장한다.
 
 ## 데이터 수집·크롤링·백엔드 배치 (Python) — 이 저장소의 범위 밖
 

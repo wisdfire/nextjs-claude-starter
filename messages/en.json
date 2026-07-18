@@ -1,0 +1,50 @@
+{
+  "Metadata": {
+    "title": "Next.js Starter Kit",
+    "description": "A Next.js + Tailwind + shadcn/ui + Neon Postgres quick-start template"
+  },
+  "LocaleSwitcher": {
+    "label": "Select language",
+    "ko": "한국어",
+    "en": "English"
+  },
+  "ThemeToggle": {
+    "label": "Toggle theme"
+  },
+  "Home": {
+    "title": "Next.js Starter Kit",
+    "subtitle": "A template for starting development right after cloning — just drop in your requirements.",
+    "getStarted": {
+      "title": "Get started",
+      "description": "Copy <code>.env.example</code> to <code>.env.local</code>, fill in your Neon connection string, then run <code>npm run dev</code>.",
+      "repo": "View repository",
+      "docs": "Next.js docs"
+    },
+    "features": {
+      "next": {
+        "title": "Next.js 16 · App Router",
+        "description": "Server Components · Turbopack · ISR"
+      },
+      "ui": {
+        "title": "Tailwind CSS v4 · shadcn/ui",
+        "description": "base-nova preset · base-ui primitives · lucide icons"
+      },
+      "db": {
+        "title": "Neon Postgres · Drizzle ORM",
+        "description": "Server-only access path · pooled/direct split · scale-to-zero"
+      },
+      "test": {
+        "title": "Vitest · Testing Library",
+        "description": "Unit tests in jsdom · jest-dom matchers"
+      },
+      "theme": {
+        "title": "Dark mode · next-themes",
+        "description": "Class-based theme toggle · follows system setting"
+      },
+      "i18n": {
+        "title": "Internationalization · next-intl",
+        "description": "Korean as the baseline · English also supported · path-prefix routing"
+      }
+    }
+  }
+}

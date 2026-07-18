@@ -1,0 +1,30 @@
+{
+  "note": "ko.json 값의 지문. en.json 이 낡았는지 판정하는 데 쓴다. 직접 수정하지 말 것.",
+  "sourceLocale": "ko",
+  "entries": {
+    "Metadata.title": "6efa1da76018",
+    "Metadata.description": "b652bdbc9085",
+    "LocaleSwitcher.label": "19f9d4a5680e",
+    "LocaleSwitcher.ko": "ea3252281bc3",
+    "LocaleSwitcher.en": "ba118bf7fc9c",
+    "ThemeToggle.label": "69b43c13ff26",
+    "Home.title": "6efa1da76018",
+    "Home.subtitle": "c4dc9328623a",
+    "Home.getStarted.title": "8779a9058983",
+    "Home.getStarted.description": "bd0583b6aca7",
+    "Home.getStarted.repo": "4c57097d4c4a",
+    "Home.getStarted.docs": "1890a4cd6667",
+    "Home.features.next.title": "83154f490521",
+    "Home.features.next.description": "7c76be8a7654",
+    "Home.features.ui.title": "8ed8fe96b004",
+    "Home.features.ui.description": "3766eb276943",
+    "Home.features.db.title": "070e9495fbc9",
+    "Home.features.db.description": "689db6279bfe",
+    "Home.features.test.title": "2208b37b402c",
+    "Home.features.test.description": "c618ab4c35e2",
+    "Home.features.theme.title": "72473cbfe2d3",
+    "Home.features.theme.description": "604ecd4b8f05",
+    "Home.features.i18n.title": "0886e8222520",
+    "Home.features.i18n.description": "841ce4ca85d5"
+  }
+}

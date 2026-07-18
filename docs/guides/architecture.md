@@ -7,13 +7,21 @@
 ```
 .
 ├── app/                    # Next.js App Router 라우트
-│   ├── layout.tsx          # 루트 레이아웃 (ThemeProvider · Toaster · Analytics 마운트)
-│   ├── page.tsx            # 랜딩 페이지 (스타터킷 소개 — 클론 후 교체 대상)
+│   ├── [locale]/           # 로케일 세그먼트 — 모든 페이지는 이 아래에 만든다
+│   │   ├── layout.tsx      # 루트 레이아웃 (lang·hreflang·NextIntlClientProvider·ThemeProvider·Toaster·Analytics)
+│   │   └── page.tsx        # 랜딩 페이지 (스타터킷 소개 — 클론 후 교체 대상)
 │   └── globals.css         # Tailwind v4 + shadcn 디자인 토큰(CSS 변수)
+├── i18n/                   # next-intl 설정 (다국어 — 한국어 기준 · 영어 추가 지원)
+│   ├── routing.ts          # 로케일 목록·기본값·URL 전략 (SSOT)
+│   ├── navigation.ts       # 로케일 인식 Link·useRouter·usePathname·redirect
+│   └── request.ts          # 요청별 로케일 판별 + messages 로드
+├── messages/               # 번역 메시지 (ko.json 원본 · en.json 동일 키 집합 유지)
+├── proxy.ts                # 로케일 라우팅 미들웨어 (Next.js 16: middleware.ts → proxy.ts)
 ├── components/
 │   ├── ui/                 # shadcn/ui 컴포넌트 (base-nova) — 직접 수정 지양, CLI로 관리
 │   ├── theme-provider.tsx  # next-themes 컨텍스트 제공자
 │   ├── theme-toggle.tsx    # 라이트/다크 전환 버튼
+│   ├── locale-switcher.tsx # 언어 선택 드롭다운 (재사용 — 새로 만들지 말 것)
 │   └── __tests__/          # 컴포넌트 단위 테스트
 ├── lib/
 │   ├── utils.ts            # cn() 클래스 병합 헬퍼
@@ -22,9 +30,13 @@
 │       └── schema.ts       # 테이블 스키마 (pgTable)
 ├── drizzle.config.ts       # drizzle-kit 설정 (generate/migrate/push/studio) — DIRECT_URL 사용
 ├── drizzle/                # 생성된 마이그레이션 SQL (db:generate 시 생성)
-├── tests/setup.ts          # Vitest 전역 셋업
+├── tests/
+│   ├── setup.ts            # Vitest 전역 셋업
+│   └── messages.test.ts    # 번역 키 정합성 회귀 테스트
 └── docs/                   # 프로젝트 문서 (이 디렉토리)
 ```
+
+> **라우트를 추가할 때**: `app/[locale]/` **아래**에 만들고 `setRequestLocale(locale)`을 호출한다. `app/` 최상위에 `page.tsx`·`layout.tsx`를 만들면 로케일 라우팅을 우회해 번역이 적용되지 않는다(`robots.ts`·`sitemap.ts`처럼 로케일이 없는 파일은 최상위가 맞다). 링크는 `next/link`가 아니라 **`@/i18n/navigation`**을 쓴다. 상세: `.claude/skills/i18n-localization/SKILL.md`
 
 ## 경로 별칭
 

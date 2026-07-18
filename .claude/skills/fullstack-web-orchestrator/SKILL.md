@@ -9,6 +9,8 @@ Next.js 16 웹사이트를 **화면설계서 수용 → 라우트 매핑 → 프
 
 > **🚨 애드센스 심사 통과는 타협 불가 목표다(최우선).** 이 하네스로 만드는 모든 웹서비스는 구글 애드센스 심사를 통과해야 한다. **리더와 모든 팀원은 `adsense-readiness` 스킬을 로드**하고 그 **공식 MUST 10항**을 설계·구현·QA 전 단계에서 충족시킨다. 애드센스 MUST 미충족은 **Phase 4.3 게이트에서 배포·완료를 차단**한다. 나중에 고치는 것이 아니라 **처음부터 요건을 만족하도록 설계**한다(정책 페이지 라우트·광고 허용 화이트리스트·콘텐츠 오리지널리티).
 >
+> **🌐 다국어는 기본값이다(한국어 기준 · 영어 추가 지원).** 이 하네스로 만드는 모든 화면은 **한국어가 기준 언어**이고 **영어도 지원**하며, 사용자가 화면에서 언어를 전환할 수 있어야 한다. **리더와 design-architect·frontend-engineer·qa-inspector는 `i18n-localization` 스킬을 로드**한다. 사용자 노출 문자열 하드코딩·`next/link` 사용·번역 키 누락은 **Phase 4.3 게이트에서 차단**한다. 나중에 번역을 입히는 것이 아니라 **처음부터 `messages/*.json` 기반으로 구현**한다.
+>
 > ⚠️ **데이터 수집(크롤러·Python 배치·ETL)은 이 저장소 범위 밖**이다 — 별도 모노레포 **`wisdfire/jobhub-jobs`** 소관. 웹앱은 **DB에 이미 적재된 수집 데이터를 읽어 렌더링**하는 것까지만 담당한다. 사용자가 크롤러 구현을 요청하면 모노레포 소관임을 알린다.
 
 ## 실행 모드: 에이전트 팀
@@ -21,10 +23,10 @@ Next.js 16 웹사이트를 **화면설계서 수용 → 라우트 매핑 → 프
 
 | 팀원 | 에이전트 타입 | 역할 | 스킬 | 출력 |
 |------|--------------|------|------|------|
-| design-architect | design-architect (커스텀, `.claude/agents/design-architect.md`) | **화면설계서 수용**·라우트 매핑·토큰 매핑·컴포넌트 대응 + **애드센스 정책 페이지·광고 화이트리스트 설계** (화면설계서 부재 시에만 자체 와이어프레임·IA 설계) | **`adsense-readiness`**, (폴백 시) `wireframe-design`·`ui-ux-pro-max`·`frontend-design` | `_workspace/01_design_spec.md` |
-| frontend-engineer | frontend-engineer (커스텀, `.claude/agents/frontend-engineer.md`) | Next.js 16 화면·컴포넌트·훅 구현 + Vitest 테스트 (**애드센스 MUST 준수**) | `frontend-build`, **`adsense-readiness`**, `ui-ux-pro-max` | 코드 + 테스트 + `_workspace/03_frontend_notes.md` |
+| design-architect | design-architect (커스텀, `.claude/agents/design-architect.md`) | **화면설계서 수용**·라우트 매핑·토큰 매핑·컴포넌트 대응 + **애드센스 정책 페이지·광고 화이트리스트 설계** (화면설계서 부재 시에만 자체 와이어프레임·IA 설계) | **`adsense-readiness`**, **`i18n-localization`**, (폴백 시) `wireframe-design`·`ui-ux-pro-max`·`frontend-design` | `_workspace/01_design_spec.md` |
+| frontend-engineer | frontend-engineer (커스텀, `.claude/agents/frontend-engineer.md`) | Next.js 16 화면·컴포넌트·훅 구현 + Vitest 테스트 (**애드센스 MUST 준수**) | `frontend-build`, **`adsense-readiness`**, **`i18n-localization`**, `ui-ux-pro-max` | 코드 + 테스트 + `_workspace/03_frontend_notes.md` |
 | backend-engineer | backend-engineer (커스텀, `.claude/agents/backend-engineer.md`) | API route·Drizzle·서버 액션 + Vitest 테스트(shape 고정) | `backend-api` | 코드 + 테스트 + `_workspace/04_api_contract.md` |
-| qa-inspector | qa-inspector (커스텀, `.claude/agents/qa-inspector.md`) — Explore 금지(스크립트 실행 필요) | 경계면 교차 검증(링크·shape·매핑) + **애드센스 MUST 기계 검증** + `npm run test` 게이트 | `qa-link-integrity`, **`adsense-readiness`** | `_workspace/05_qa_report.md` |
+| qa-inspector | qa-inspector (커스텀, `.claude/agents/qa-inspector.md`) — Explore 금지(스크립트 실행 필요) | 경계면 교차 검증(링크·shape·매핑) + **애드센스 MUST 기계 검증** + `npm run test` 게이트 | `qa-link-integrity`, **`adsense-readiness`**, **`i18n-localization`** | `_workspace/05_qa_report.md` |
 
 > **배포 설정**: Vercel 배포·`vercel.ts` config-as-code·환경변수는 리더가 `web-deploy-config` 스킬을 로드해 처리한다(검증 게이트 통과 후, 아래 Phase 4.5 참고).
 
@@ -89,7 +91,7 @@ Next.js 16 웹사이트를 **화면설계서 수용 → 라우트 매핑 → 프
          prompt: /* 화면설계서 모드 */ "_workspace/00_input/02_screen-spec.md·01_design-system.md·00_brand-guideline.md를 **먼저 Read**하라. 이 문서들이 화면·컴포넌트·토큰·문구의 SSOT다. 당신의 일은 **새로 설계하는 것이 아니라 수용·번역·검증**이다: ①화면설계서의 화면 목록을 그대로 받아 Next.js 16 App Router 라우트로 매핑한다(route group·동적 세그먼트 정확히 — 이 표가 QA의 SSOT다) ②컴포넌트를 shadcn 카탈로그에 대응시킨다 ③01_design-system.md의 토큰을 shadcn 토큰 체계로 매핑한다(신규 정의 금지, globals.css의 :root/.dark/@theme inline 수정 금지) ④화면설계서와 애드센스 MUST(adsense-readiness 스킬)가 충돌하면 — 예: 정책 페이지 라우트 누락, 저가치 화면 광고 — 임의로 고치지 말고 리더에게 SendMessage로 보고한다. **화면을 추가·삭제·재설계하지 않고, 팔레트·폰트·무드를 재결정하지 않는다**(이미 확정된 브랜드다). 결과를 _workspace/01_design_spec.md에 쓴다."
                  /* 폴백(docs/design/ 부재) */ "화면설계서가 없다 — 자체 설계 모드다. wireframe-design 스킬로 _workspace/00_input의 요구사항을 IA·라우트 매핑·와이어프레임·디자인 토큰 방침·컴포넌트 명세로 설계해 _workspace/01_design_spec.md에 쓴다. 시각 방향은 ui-ux-pro-max·frontend-design 스킬로 결정한다. 라우트 표는 QA의 SSOT이니 정확히." },
        { name: "frontend-engineer", agent_type: "frontend-engineer", model: "opus",
-         prompt: "frontend-build 스킬로 01_design_spec.md의 라우트 표를 따라 app/ 화면·컴포넌트·훅을 구현. **화면설계서(_workspace/00_input/02_screen-spec.md·01_design-system.md)가 있으면 그것도 직접 Read하고, 문구·컴포넌트·토큰은 거기 있는 것을 쓴다(임의 생성 금지)** — 01_design_spec.md는 라우트 매핑 계층일 뿐 화면 정의의 원본이 아니다. shadcn은 npx로 추가, base-ui render prop 사용. 훅 타입은 04_api_contract.md에 맞춘다. 컴포넌트·훅에 Vitest 테스트(@testing-library/react·renderHook)를 함께 작성해 npm run test 통과." },
+         prompt: "frontend-build 스킬로 01_design_spec.md의 라우트 표를 따라 app/ 화면·컴포넌트·훅을 구현. **화면설계서(_workspace/00_input/02_screen-spec.md·01_design-system.md)가 있으면 그것도 직접 Read하고, 문구·컴포넌트·토큰은 거기 있는 것을 쓴다(임의 생성 금지)** — 01_design_spec.md는 라우트 매핑 계층일 뿐 화면 정의의 원본이 아니다. shadcn은 npx로 추가, base-ui render prop 사용. 훅 타입은 04_api_contract.md에 맞춘다. **다국어 필수(i18n-localization 스킬 로드)**: 페이지는 app/[locale]/ 아래에 만들고 setRequestLocale 호출, 사용자 노출 문자열은 전부 messages/ko.json·messages/en.json에 두고 useTranslations로 읽으며(aria-label·placeholder·토스트·메타데이터 포함), 링크·이동은 @/i18n/navigation의 Link·useRouter·redirect를 쓴다(next/link 금지). 키는 두 언어에 동시 추가. 컴포넌트·훅에 Vitest 테스트(@testing-library/react·renderHook)를 함께 작성해 npm run test 통과." },
        { name: "backend-engineer",  agent_type: "backend-engineer",  model: "opus",
          prompt: "backend-api 스킬로 API route·Drizzle을 구현하고 응답 shape을 04_api_contract.md에 계약으로 기록. shape 변경 시 frontend-engineer에 통지. DB 계층(@/lib/db)을 vi.mock으로 모킹한 Vitest 테스트로 응답 shape을 계약과 일치하게 고정하고 npm run test 통과." },
        { name: "qa-inspector",      agent_type: "qa-inspector",      model: "opus",
@@ -165,12 +167,14 @@ Next.js 16 웹사이트를 **화면설계서 수용 → 라우트 매핑 → 프
 
 1. **QA 교차 검증 통과**: 링크 정합성·API 응답 shape↔훅 타입·엔드포인트↔훅 매핑이 `05_qa_report.md`에서 모두 통과.
 1-A. **애드센스 게이트 통과(필수·차단성)**: `adsense-readiness` 스킬의 **MUST 10항이 전부 충족**돼야 한다. 하나라도 미충족이면 해당 팀원에 수정을 지시하고, **미통과 상태로 배포·완료로 넘어가지 않는다.** 사용자가 애드센스를 명시적으로 면제한 경우에만 건너뛰고 그 사실을 보고에 남긴다.
+1-B. **다국어 게이트 통과(필수·차단성)**: `i18n-localization` 스킬의 MUST가 전부 충족돼야 한다. `qa-link-integrity` 스킬 §1-6의 Grep 검증(잘못된 네비게이션 import·`app/` 최상위 page·하드코딩 문자열·`setRequestLocale` 누락)에서 **하나라도 걸리면 미통과**다. 번역 키 정합성은 `npm run test`의 `tests/messages.test.ts`로 확인한다. 화면 흐름이 바뀌었으면 **Playwright MCP로 한국어·영어 양쪽을 실제로 확인**한다(전환·`lang` 속성·`aria-label`까지 번역·링크 404 없음).
 2. **명령 게이트 순서 통과**: 리더가 `npm run lint` → `npm run build` → `npm run test`(Vitest) 순으로 실행해 전부 통과시킨다. 하나라도 실패하면 해당 팀원에 파일:라인과 함께 통보하고 수정 → 재검증 루프로 돌린다. 최대 2~3회 재시도 후에도 미통과면 잔여 항목을 `05_qa_report.md`에 "미해결"로 확정하고 사용자에게 에스컬레이션한다(무한 루프 방지).
 3. 게이트 미통과 상태로는 Phase 4.5(배포)나 Phase 5(완료 보고)로 넘어가지 않는다.
 
 **비기능 검증 항목(완료 체크리스트):**
 - [ ] QA 교차 검증(링크·shape·매핑) 통과
 - [ ] **애드센스 MUST 10항 전부 충족** (`adsense-readiness`) — 개인정보처리방침(구글 지정 문구 포함)·크롤러 차단 없음·HTTPS·저가치 화면 광고 미렌더·플레이스홀더 없음·수집 데이터 편집 부가가치·광고 배치 규칙·링크 404 없음
+- [ ] **다국어 MUST 충족** (`i18n-localization`) — 문자열 하드코딩 없음(aria-label 포함)·`@/i18n/navigation` 사용·`app/[locale]/` 배치 + `setRequestLocale`·ko/en 키 집합 동일·언어 전환 UI 전역 접근·양쪽 언어 실제 렌더 확인
 - [ ] `npm run lint` 통과
 - [ ] `npm run build` 통과
 - [ ] **`npm run test`(Vitest) 통과** — 컴포넌트·훅·엔드포인트에 대응 테스트 존재

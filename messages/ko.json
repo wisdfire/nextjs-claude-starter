@@ -1,0 +1,50 @@
+{
+  "Metadata": {
+    "title": "Next.js Starter Kit",
+    "description": "Next.js + Tailwind + shadcn/ui + Neon Postgres 빠른 시작 템플릿"
+  },
+  "LocaleSwitcher": {
+    "label": "언어 선택",
+    "ko": "한국어",
+    "en": "English"
+  },
+  "ThemeToggle": {
+    "label": "테마 전환"
+  },
+  "Home": {
+    "title": "Next.js Starter Kit",
+    "subtitle": "클론 후 요구사항 문서를 넣고 바로 개발을 시작하기 위한 템플릿입니다.",
+    "getStarted": {
+      "title": "시작하기",
+      "description": "<code>.env.example</code> 을 <code>.env.local</code> 로 복사하고 Neon 연결 문자열을 채운 뒤 <code>npm run dev</code> 를 실행하세요.",
+      "repo": "저장소 보기",
+      "docs": "Next.js 문서"
+    },
+    "features": {
+      "next": {
+        "title": "Next.js 16 · App Router",
+        "description": "Server Components · Turbopack · ISR"
+      },
+      "ui": {
+        "title": "Tailwind CSS v4 · shadcn/ui",
+        "description": "base-nova 프리셋 · base-ui 프리미티브 · lucide 아이콘"
+      },
+      "db": {
+        "title": "Neon Postgres · Drizzle ORM",
+        "description": "서버 사이드 단일 경로 · pooled/direct 분리 · scale-to-zero"
+      },
+      "test": {
+        "title": "Vitest · Testing Library",
+        "description": "jsdom 환경 단위 테스트 · jest-dom 매처"
+      },
+      "theme": {
+        "title": "다크모드 · next-themes",
+        "description": "class 방식 테마 토글 · 시스템 설정 연동"
+      },
+      "i18n": {
+        "title": "다국어 · next-intl",
+        "description": "한국어 기준 · 영어 추가 지원 · 경로 접두사 라우팅"
+      }
+    }
+  }
+}

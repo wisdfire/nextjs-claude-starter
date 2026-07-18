@@ -38,6 +38,37 @@
    - **깨진 링크(404)가 없는가** — 링크 정합성은 애드센스 Site behavior 요건이다(`qa-link-integrity`)
    - 광고가 콘텐츠보다 많거나, 내비게이션·버튼과 혼동되는 배치가 아닌가
 
+5. **다국어 게이트 (필수 — 화면·문구가 바뀐 경우)**
+
+   이 프로젝트는 **한국어 기준 + 영어 추가 지원**이다. 규칙의 SSOT는 `.claude/skills/i18n-localization/SKILL.md`이며, 아래는 **기계적으로 확인**한다:
+
+   ```bash
+   # ① 로케일 무시 네비게이션 (영어 화면에서 404·언어 이탈)
+   grep -rnE 'from "next/link"|(Link|useRouter|redirect|usePathname).*from "next/navigation"' app components hooks lib
+
+   # ② app/ 최상위 page·layout (로케일 라우팅 우회 → 번역 미적용)
+   ls app/page.tsx app/layout.tsx 2>/dev/null
+
+   # ③ 하드코딩된 사용자 노출 문자열 (aria-label·placeholder·alt·title)
+   grep -rnE '(aria-label|placeholder|alt|title)="[^"]*[가-힣][^"]*"' app components
+
+   # ④ setRequestLocale 누락
+   grep -rL "setRequestLocale" $(find app -name "page.tsx")
+   ```
+
+   ①②③④에서 **하나라도 걸리면 완료로 보고하지 않는다.** ③은 주석·테스트의 한글은 정상이므로 **JSX 속성·토스트에 한정**해 판정한다.
+
+   ```bash
+   # ⑤ 번역 정합성 — 누락·낡음·잉여·ICU 파손(플레이스홀더·영어 복수형·리치 태그)
+   npm run i18n:check
+   ```
+
+   `messages/ko.json`만 손으로 고치고, `en.json`은 **커밋 훅이 LLM으로 생성**한다(`npm run i18n:translate`로 직접 실행 가능). 번역을 손봤으면 `node scripts/i18n/translate.mjs --adopt`으로 확정한다 — 안 하면 다음 실행에서 덮어써진다.
+   자동 번역이라도 **커밋 diff는 사람이 본다**: `git diff --cached messages/en.json`. 훅은 구조 파손만 막고 어색한 표현은 막지 못한다.
+   같은 검증을 `npm run test`의 `tests/messages.test.ts`가 다시 돌리므로(훅 우회 대비) **출력을 실제로 읽고** 판단한다.
+
+   화면 흐름이 바뀌었으면 아래 Playwright 검증에서 **양쪽 언어를 모두** 확인한다.
+
 ## 단위 테스트 강제 규칙
 
 > 구현 태스크에서 **단위 테스트 작성은 선택이 아니라 필수**다. 테스트 없이 "구현 완료"로 보고하지 않는다.
@@ -64,6 +95,21 @@
    - `browser_click` · `browser_type` · `browser_fill_form` — 클릭·입력 등 상호작용
    - `browser_console_messages` · `browser_network_requests` — 콘솔 에러·요청 실패 확인
 3. 기대한 화면 전환·텍스트·상태 변화가 실제로 일어나는지 확인하고, 콘솔/네트워크 에러가 없는지 본다.
+4. **양쪽 언어를 모두 확인한다** (다국어는 기본값이다):
+   - `/` → 한국어 렌더 · `<html lang="ko">`
+   - 언어 선택 → `/en` 이동 · 영어 렌더 · `<html lang="en">`
+   - 다시 한국어 선택 → `/`로 복귀 (`NEXT_LOCALE` 쿠키 유지)
+   - 각 언어에서 헤더·푸터 링크가 404 없이 열리는지 (특히 개인정보처리방침)
+
+   `browser_evaluate`로 한 번에 확인할 수 있다. **아이콘 전용 버튼의 `aria-label`은 화면에 글자가 없어 스냅샷으로는 안 보이므로 여기서만 잡힌다**:
+
+   ```js
+   () => ({
+     lang: document.documentElement.lang,
+     labels: [...document.querySelectorAll("button[aria-label]")].map(b => b.getAttribute("aria-label")),
+     hreflang: [...document.querySelectorAll('link[rel="alternate"]')].map(l => `${l.hreflang} -> ${l.href}`),
+   })
+   ```
 
 > Playwright MCP는 **수동 검증·디버깅 용도**다. 회귀를 막아야 하는 핵심 흐름은 Vitest 단위/통합 테스트로 고정해 두는 것을 우선한다.
 
