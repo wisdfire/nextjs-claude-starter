@@ -79,8 +79,12 @@ npm run db:studio    # Drizzle Studio (DB GUI)
 
 | 하네스 | 목표 | 트리거 → 사용할 오케스트레이터 스킬 |
 | ------ | ---- | ----------------------------------- |
-| 풀스택 웹 개발 | 와이어프레임→디자인→프론트→백엔드→**애드센스 게이트**→QA(링크 경로 검증)를 파이프라인으로 조율 | 웹사이트/화면/풀스택 개발 요청 시 → `fullstack-web-orchestrator` |
-| 리서치→PRD/ROADMAP/DATA-JOBS | 웹·학술·커뮤니티 교차검증 → PRD.md(**애드센스 100% 통과 필수**·유지보수 최소·Lighthouse 지표)·**DATA-JOBS.md(수집 요구 시 모노레포 인계 문서)**·ROADMAP.md 생성 | PRD/요구사항 정의/로드맵/시장조사/수집 요구사항 정리 요청 시 → `research-to-spec-orchestrator` |
+| 풀스택 웹 개발 | 화면설계서 수용→라우트 매핑→프론트→백엔드→**애드센스 게이트**→QA(링크 경로 검증)를 파이프라인으로 조율 | 웹사이트/화면/풀스택 개발 요청 시 → `fullstack-web-orchestrator` |
+| 리서치→**기술 스펙**(PRD/ROADMAP/DATA-JOBS) | 웹·학술·커뮤니티 교차검증 → PRD.md(**애드센스 100% 통과 필수**·유지보수 최소·Lighthouse 지표)·**DATA-JOBS.md(수집 요구 시 모노레포 인계 문서)**·ROADMAP.md 생성. **기술 스펙 전담 — 브랜드·디자인·화면설계는 만들지 않는다** | PRD/요구사항 정의/로드맵/시장조사/수집 요구사항 정리 요청 시 → `research-to-spec-orchestrator` |
+
+> **🎨 브랜드·디자인 시스템·화면설계서는 이 저장소가 소유하지 않는다.** 정본은 **[`wisdfire/webforge-design`](https://github.com/wisdfire/webforge-design)** 저장소(`screen-spec-forge` 하네스)가 생산하며, 이 저장소는 그 산출물 4종(`00_brand-guideline.md`·`01_design-system.md`·`02_screen-spec.md`·`manifest.json`)을 **`docs/design/`에 입력으로 받아** 구현한다(상위 오케스트레이터 `webforge-orchestrator`가 복사한다). 규칙을 여기에 복제하지 않는다 — 필요하면 그 저장소를 본다.
+>
+> **폴백**: `docs/design/`이 없으면(이 스타터킷을 파이프라인 밖에서 단독 사용하는 경우) 기존대로 `wireframe-design` 스킬·`design-architect` 에이전트가 **자체 설계**한다. 두 경로 모두 지원된다.
 
 ### PRD 작성의 시작점 · 산출물
 
