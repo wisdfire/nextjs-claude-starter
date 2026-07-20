@@ -7,7 +7,7 @@ description: "풀스택 웹사이트 개발 에이전트 팀을 조율하는 오
 
 Next.js 16 웹사이트를 **화면설계서 수용 → 라우트 매핑 → 프론트엔드 → 백엔드 → QA**의 파이프라인으로 개발하는 에이전트 팀을 조율한다. 브랜드·디자인 시스템·화면설계서는 이 저장소가 만들지 않고 **`webforge-design` 저장소의 산출물을 `docs/design/`에서 입력으로 받는다**(부재 시 자체 설계로 폴백 — Phase 1 참고). 각 모듈 완성 직후 QA를 점진 실행(incremental QA)하여 경계면 버그(링크 404, API↔훅 불일치)를 조기에 잡는다.
 
-> **🚨 애드센스 심사 통과는 타협 불가 목표다(최우선).** 이 하네스로 만드는 모든 웹서비스는 구글 애드센스 심사를 통과해야 한다. **리더와 모든 팀원은 `adsense-readiness` 스킬을 로드**하고 그 **공식 MUST 10항**을 설계·구현·QA 전 단계에서 충족시킨다. 애드센스 MUST 미충족은 **Phase 4.3 게이트에서 배포·완료를 차단**한다. 나중에 고치는 것이 아니라 **처음부터 요건을 만족하도록 설계**한다(정책 페이지 라우트·광고 허용 화이트리스트·콘텐츠 오리지널리티).
+> **🚨 애드센스 심사 통과는 타협 불가 목표다(최우선).** 이 하네스로 만드는 모든 웹서비스는 구글 애드센스 심사를 통과해야 한다. **리더와 모든 팀원은 `adsense-readiness` 스킬을 로드**하고 그 **공식 MUST 10항**을 설계·구현·QA 전 단계에서 충족시킨다. 애드센스 MUST 미충족은 **Phase 4.3 게이트에서 배포·완료를 차단**하고, 기계 검증으로 판정되지 않는 정성 축(저가치·복제·편집 부가가치)은 **Phase 4.4의 적대적 검증(`adsense-adversarial-audit`, 최대 3라운드)**이 차단한다. 나중에 고치는 것이 아니라 **처음부터 요건을 만족하도록 설계**한다(정책 페이지 라우트·광고 허용 화이트리스트·콘텐츠 오리지널리티).
 >
 > **🌐 다국어는 기본값이다(한국어 기준 · 영어 추가 지원).** 이 하네스로 만드는 모든 화면은 **한국어가 기준 언어**이고 **영어도 지원**하며, 사용자가 화면에서 언어를 전환할 수 있어야 한다. **리더와 design-architect·frontend-engineer·qa-inspector는 `i18n-localization` 스킬을 로드**한다. 사용자 노출 문자열 하드코딩·`next/link` 사용·번역 키 누락은 **Phase 4.3 게이트에서 차단**한다. 나중에 번역을 입히는 것이 아니라 **처음부터 `messages/*.json` 기반으로 구현**한다.
 >
@@ -27,6 +27,7 @@ Next.js 16 웹사이트를 **화면설계서 수용 → 라우트 매핑 → 프
 | frontend-engineer | frontend-engineer (커스텀, `.claude/agents/frontend-engineer.md`) | Next.js 16 화면·컴포넌트·훅 구현 + Vitest 테스트 (**애드센스 MUST 준수**) | `frontend-build`, **`adsense-readiness`**, **`i18n-localization`**, `ui-ux-pro-max` | 코드 + 테스트 + `_workspace/03_frontend_notes.md` |
 | backend-engineer | backend-engineer (커스텀, `.claude/agents/backend-engineer.md`) | API route·Drizzle·서버 액션 + Vitest 테스트(shape 고정) | `backend-api` | 코드 + 테스트 + `_workspace/04_api_contract.md` |
 | qa-inspector | qa-inspector (커스텀, `.claude/agents/qa-inspector.md`) — Explore 금지(스크립트 실행 필요) | 경계면 교차 검증(링크·shape·매핑) + **애드센스 MUST 기계 검증** + `npm run test` 게이트 | `qa-link-integrity`, **`adsense-readiness`**, **`i18n-localization`** | `_workspace/05_qa_report.md` |
+| adsense-auditor ×3 | adsense-auditor (커스텀, `.claude/agents/adsense-auditor.md`) — Phase 4.4에서만 투입 | **애드센스 심사관 역할의 적대적 검증** — 기계 검증이 못 잡는 정성 축(저가치·복제·편집 부가가치·완성도)을 렌더된 화면 기준으로 심사. 3렌즈 독립 병렬 | **`adsense-adversarial-audit`**, **`adsense-readiness`**, `i18n-localization` | `_workspace/06_adsense_audit_r{N}_L{1,2,3}.md` |
 
 > **배포 설정**: Vercel 배포·`vercel.ts` config-as-code·환경변수는 리더가 `web-deploy-config` 스킬을 로드해 처리한다(검증 게이트 통과 후, 아래 Phase 4.5 참고).
 
@@ -169,11 +170,14 @@ Next.js 16 웹사이트를 **화면설계서 수용 → 라우트 매핑 → 프
 1-A. **애드센스 게이트 통과(필수·차단성)**: `adsense-readiness` 스킬의 **MUST 10항이 전부 충족**돼야 한다. 하나라도 미충족이면 해당 팀원에 수정을 지시하고, **미통과 상태로 배포·완료로 넘어가지 않는다.** 사용자가 애드센스를 명시적으로 면제한 경우에만 건너뛰고 그 사실을 보고에 남긴다.
 1-B. **다국어 게이트 통과(필수·차단성)**: `i18n-localization` 스킬의 MUST가 전부 충족돼야 한다. `qa-link-integrity` 스킬 §1-6의 Grep 검증(잘못된 네비게이션 import·`app/` 최상위 page·하드코딩 문자열·`setRequestLocale` 누락)에서 **하나라도 걸리면 미통과**다. 번역 키 정합성은 `npm run test`의 `tests/messages.test.ts`로 확인한다. 화면 흐름이 바뀌었으면 **Playwright MCP로 한국어·영어 양쪽을 실제로 확인**한다(전환·`lang` 속성·`aria-label`까지 번역·링크 404 없음).
 2. **명령 게이트 순서 통과**: 리더가 `npm run lint` → `npm run build` → `npm run test`(Vitest) 순으로 실행해 전부 통과시킨다. 하나라도 실패하면 해당 팀원에 파일:라인과 함께 통보하고 수정 → 재검증 루프로 돌린다. 최대 2~3회 재시도 후에도 미통과면 잔여 항목을 `05_qa_report.md`에 "미해결"로 확정하고 사용자에게 에스컬레이션한다(무한 루프 방지).
-3. 게이트 미통과 상태로는 Phase 4.5(배포)나 Phase 5(완료 보고)로 넘어가지 않는다.
+3. 게이트 미통과 상태로는 Phase 4.4(적대적 검증)·Phase 4.5(배포)·Phase 5(완료 보고)로 넘어가지 않는다.
+
+> **1-A는 "기계적으로 확인 가능한 MUST"까지만 책임진다.** 존재·문자열·링크로 판정되지 않는 정성 축(콘텐츠 가치·복제 여부·정책 페이지의 실질 내용)은 **Phase 4.4의 적대적 검증**이 담당한다. 여기서 통과했다고 애드센스를 통과한 것이 아니다.
 
 **비기능 검증 항목(완료 체크리스트):**
 - [ ] QA 교차 검증(링크·shape·매핑) 통과
 - [ ] **애드센스 MUST 10항 전부 충족** (`adsense-readiness`) — 개인정보처리방침(구글 지정 문구 포함)·크롤러 차단 없음·HTTPS·저가치 화면 광고 미렌더·플레이스홀더 없음·수집 데이터 편집 부가가치·광고 배치 규칙·링크 404 없음
+- [ ] **애드센스 적대적 검증 통과** (Phase 4.4 · `adsense-adversarial-audit`) — 3렌즈(콘텐츠 가치·정책/법적·크롤러/완성도) 전부 `approve` 또는 `approve-with-risk`, **잔여 `blocker` 0**. 렌더된 화면 기준으로 심사했고 `06_adsense_verdict.md`에 확정
 - [ ] **다국어 MUST 충족** (`i18n-localization`) — 문자열 하드코딩 없음(aria-label 포함)·`@/i18n/navigation` 사용·`app/[locale]/` 배치 + `setRequestLocale`·ko/en 키 집합 동일·언어 전환 UI 전역 접근·양쪽 언어 실제 렌더 확인
 - [ ] `npm run lint` 통과
 - [ ] `npm run build` 통과
@@ -194,6 +198,34 @@ Next.js 16 웹사이트를 **화면설계서 수용 → 라우트 매핑 → 프
 > | 화면설계서 준수 | `02_screen-spec.md` ↔ `app/` 라우트 양방향 대조 |
 > | 라이브러리·API 현행성 | context7 MCP |
 
+### Phase 4.4: 애드센스 적대적 검증 (필수·차단성)
+
+Phase 4.3의 기계 게이트를 통과했다고 애드센스를 통과하는 것이 아니다. **기계 검증은 존재/부재만 판정**하고, 실제 거절의 큰 축인 **콘텐츠의 질**은 잡지 못한다(정책 페이지가 존재하지만 껍데기, 링크는 살아있지만 도착지가 빈 목록). 그 사각지대를 **심사관 역할의 적대적 검증**으로 메운다.
+
+> **절차의 정본은 `adsense-adversarial-audit` 스킬이다.** 리더는 이 스킬을 로드하고 아래를 지휘한다. 요건의 SSOT는 여전히 `adsense-readiness`(MUST 10항)다.
+
+1. **전제 확인**: Phase 4.3 통과 + `npm run dev`(또는 프리뷰 URL)로 **실제 화면 렌더 가능**. 렌더 불가면 이 단계를 수행할 수 없으므로 **통과 처리하지 않고** 사유를 보고한다.
+2. **정책 현행성 재확인**: `adsense-readiness`의 기준일을 확인하고, 각 심사관이 자기 렌즈의 출처 URL을 WebFetch로 열어 현행인지 대조한다. 불일치 발견 시 리포트 최상단에 `[정책 갱신 필요]`로 남기고 스킬 갱신을 처리한다.
+3. **3렌즈 독립 병렬 심사**: `adsense-auditor` 3개를 **서로의 결론을 모른 채** 동시에 띄운다(앵커링 방지). 팀 모드면 팀원으로, 아니면 `Agent`(`model: "opus"`, `run_in_background: true`)로 실행한다.
+
+   | 렌즈 | 심사 축 | 출력 |
+   |---|---|---|
+   | **L1 콘텐츠 가치** | 복제·저가치·대량생성·빈 상태·미완성·본문 기계번역 (MUST 5·6·7·10) | `_workspace/06_adsense_audit_r{N}_L1.md` |
+   | **L2 정책·법적** | 개인정보처리방침 **실질 내용**·도달성·CMP·광고 배치·HTTPS (MUST 1·2·3·8) | `..._L2.md` |
+   | **L3 크롤러·완성도** | `/robots.txt` 실측·공개 접근·내비게이션 실주행·soft-404·로케일 이탈 (MUST 3·4·5·9) | `..._L3.md` |
+
+4. **지적 라우팅**: 각 지적(정책근거·증거·거절시나리오·심각도·수정지시 5필드)을 담당 팀원에 SendMessage로 전달한다. **심사관은 코드를 고치지 않는다** — 고치면 자기가 고친 것을 자기가 승인하게 된다.
+5. **수정 → 재심사 루프(최대 3라운드)**: 라운드마다 **이전 지적의 회귀 검증부터** 한다("고쳤다"는 보고를 증거로 쓰지 않고 화면에서 확인). 리포트는 라운드별 파일로 남기고 덮어쓰지 않는다.
+6. **종료 판정**:
+   - 전 렌즈 `approve` → **통과**, Phase 4.5로 진행.
+   - `approve-with-risk`만 잔존 → 통과하되 **잔여 리스크를 사용자에게 명시 보고**.
+   - **3라운드 후에도 `blocker` 잔존 → 미통과 확정.** `_workspace/06_adsense_verdict.md`에 "미해결(사용자 판단 필요)"로 남기고 에스컬레이션한다. **배포·완료로 넘어가지 않는다.**
+7. 최종 판정을 `_workspace/06_adsense_verdict.md`에 확정한다(최종 판정·라운드별 지적 수 추이·잔여 리스크·미해결 항목).
+
+> **3라운드 상한은 무한 루프 방지용이지 "3번 하면 통과"가 아니다.** 상한 도달 시 blocker가 남았다면 그것은 통과가 아니라 **미해결**이다.
+>
+> 사용자가 애드센스를 명시적으로 면제한 경우에만 이 Phase를 건너뛰고, 면제 사실을 보고에 남긴다.
+
 ### Phase 4.5: 배포 (config-as-code)
 
 **이 Phase는 사용자가 배포/deploy/vercel을 명시적으로 요청한 경우에만 실행한다**(트리거 키워드와 일치). 로컬 기능 개발만 원하는 경우 Phase 4.3 검증 게이트 통과로 완료 처리하고 이 단계를 건너뛴다. 배포를 수행할 때는 검증 게이트 통과 후 리더가 `web-deploy-config` 스킬을 로드해 Vercel에 배포한다.
@@ -209,7 +241,7 @@ Next.js 16 웹사이트를 **화면설계서 수용 → 라우트 매핑 → 프
 2. 팀 정리(TeamDelete).
 3. `_workspace/`는 보존한다(중간 산출물 삭제 금지 — 사후 검증·감사 추적용).
 4. 커밋 전 검증은 Phase 4.3 검증 게이트(`npm run lint`→`build`→`test`)와 Phase 4.5 배포가 이미 통과·완료되었는지 리더가 확인한다. 화면 흐름 변경 시 Playwright MCP로 브라우저 검증.
-5. 사용자에게 결과를 요약 보고한다(생성/수정 화면, API, QA 결과, Vitest 테스트 통과, `vercel.ts` 설정 코드화·배포 결과 요약).
+5. 사용자에게 결과를 요약 보고한다(생성/수정 화면, API, QA 결과, Vitest 테스트 통과, **애드센스 적대적 검증 최종 판정 + 라운드 수 + 잔여 리스크**, `vercel.ts` 설정 코드화·배포 결과 요약).
 
 > **팀 재구성:** Phase별로 다른 조합이 필요하면 현재 팀을 TeamDelete 후 새 TeamCreate. 이전 산출물은 `_workspace/`에 보존되어 새 팀이 Read로 접근 가능.
 
@@ -229,7 +261,16 @@ Next.js 16 웹사이트를 **화면설계서 수용 → 라우트 매핑 → 프
    └─ qa-inspector ─(link-check.mjs + 교차검증)→ _workspace/05_qa_report.md
             │  └─(파일:라인+수정방법)→ 해당 팀원 (경계면 이슈는 양쪽)
             ↓
-      [리더: 통합 + 커밋 전 검증]
+      [리더: Phase 4.3 기계 게이트 (lint·build·test·MUST Grep)]
+            ↓
+   ┌─ adsense-auditor L1 (콘텐츠 가치) ─┐
+   ├─ adsense-auditor L2 (정책·법적)   ─┤ 독립 병렬 심사 (앵커링 방지)
+   └─ adsense-auditor L3 (크롤러·완성도)┘
+            │  └─(5필드 지적)→ 담당 엔지니어 → 수정 → 재심사 (최대 3라운드)
+            ↓
+      _workspace/06_adsense_verdict.md (최종 판정)
+            ↓
+      [리더: 배포 + 완료 보고]
 ```
 
 ## 에러 핸들링
@@ -243,6 +284,9 @@ Next.js 16 웹사이트를 **화면설계서 수용 → 라우트 매핑 → 프
 | `DATABASE_URL` 부재 | 백엔드가 목 응답으로 계약만 확정, 리더가 `.env.local` 필요를 사용자에 안내 (`lib/db`는 부재 시 즉시 throw한다 — 우회하지 않는다) |
 | 팀원 과반 실패 | 사용자에 알리고 진행 여부 확인 |
 | 라우트 표 변경으로 하류 링크 깨짐 | design-architect가 frontend/qa에 변경 통지 → QA 재실행 |
+| Phase 4.4에서 화면 렌더 불가(dev 서버·프리뷰 없음) | **통과 처리하지 않는다.** 코드 리뷰로 대체하지 말고 dev 서버를 띄우거나 프리뷰를 배포한 뒤 재실행. 불가하면 "적대적 검증 미수행"으로 사용자에 보고 |
+| 3라운드 후에도 애드센스 blocker 잔존 | `06_adsense_verdict.md`에 "미해결(사용자 판단 필요)"로 확정하고 에스컬레이션. 배포로 넘어가지 않는다. 새 blocker가 3라운드에 처음 나왔다면 설계 결함 신호이므로 그 사실을 함께 보고 |
+| 심사관 렌즈 간 판정 충돌(L1 reject · L2 approve) | 정상이다(렌즈가 다르다). 병합하지 말고 **각 렌즈 판정을 따로 유지**하며, 하나라도 blocker면 미통과 |
 | Vercel 미링크/미인증 | 배포를 스킵하고 로컬 검증(lint·build·test) 통과만으로 완료 보고. 사용자에 `vercel link`/인증 안내 |
 
 ## 테스트 시나리오
